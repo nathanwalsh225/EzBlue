@@ -43,8 +43,8 @@ fun HomeScreen(
 
     val dummyBeaconList = listOf(
         Beacon(
-            id = "beacon1",
-            name = "Office Beacon",
+            beaconId = "beacon1",
+            beaconName = "Office Beacon",
             role = "Motion Detection",
             uuid = "12345678-1234-1234-1234-123456789abc",
             major = 1,
@@ -57,8 +57,8 @@ fun HomeScreen(
             note = "This is a note"
         ),
         Beacon(
-            id = "beacon2",
-            name = "Car Beacon",
+            beaconId = "beacon2",
+            beaconName = "Car Beacon",
             role = "Automated Messaging",
             uuid = "12345678-1234-5678-1234-123456789def",
             major = 1,
@@ -71,8 +71,8 @@ fun HomeScreen(
             note = null
         ),
         Beacon(
-            id = "beacon3",
-            name = "Home Beacon",
+            beaconId = "beacon3",
+            beaconName = "Home Beacon",
             role = "Home Automation",
             uuid = "87654321-4321-4321-4321-987654321abc",
             major = 2,
@@ -133,7 +133,7 @@ fun BeaconCard(beacon: Beacon) {
             ) {
                 Column {
                     Text(
-                        text = beacon.name,
+                        text = beacon.beaconName,
                         style = MaterialTheme.typography.headlineMedium.copy(
                             color = MaterialTheme.colorScheme.secondary
                         )
