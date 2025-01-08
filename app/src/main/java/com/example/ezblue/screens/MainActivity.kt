@@ -1,13 +1,17 @@
 package com.example.ezblue.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -16,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,11 +30,13 @@ import com.example.ezblue.ui.theme.EzBlueTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.shouldShowRationale
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -44,7 +51,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 
     //Most of this is from StudyPath (One of my previous projects which already has alot of the boiler plate code I need)
     @OptIn(ExperimentalPermissionsApi::class)
@@ -76,24 +82,30 @@ class MainActivity : ComponentActivity() {
             // Launch permission request
             permissionState.launchMultiplePermissionRequest()
 
+
+            //TODO either use this or scrap it
+
             // Continuously monitor until the user completes permission interaction
             //https://proandroiddev.com/mastering-side-effects-in-jetpack-compose-b7ee46162c01
+            //https://medium.com/@tangkegaga/snapshotflow-3895096e6fd9
             //mix of the documentation and chatGPT helped me get this going to create a loop that will keep checking the permissions
             //until the user has either granted or denied them just for a more dynamic experience
-            snapshotFlow { permissionState.allPermissionsGranted }
-                .collect { allGranted ->
-                    if (allGranted) {
-                        requestingPermissions.value = false // Permissions granted
-                    } else if (!permissionState.permissions.any { !it.status.isGranted }) {
-                        requestingPermissions.value = false // Interaction complete but permissions denied
-                    }
-                }
+//            snapshotFlow { permissionState.allPermissionsGranted }
+//                .collect { allGranted ->
+//                    if (allGranted) {
+//                        requestingPermissions.value = false // Permissions granted
+//                    } else {
+//                        val shouldShowRationale = permissionState.permissions.any { permission ->
+//                            permission.status.shouldShowRationale
+//                        }
+//                        if (!shouldShowRationale) {
+//                            requestingPermissions.value = false // Permissions denied
+//                        }
+//                    }
+//                }
         }
 
         when {
-            requestingPermissions.value -> {
-                LoadingUI() //  show the loading page while user is being presented with permissions
-            }
             permissionState.allPermissionsGranted -> {
                 content() // permissions granted so the application can continue
             }
@@ -106,20 +118,26 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun FallbackUI() { //TODO make this look better
-        Text(
-            text = "Permissions are required to proceed. Please enable them in settings.",
-            modifier = Modifier.fillMaxSize().padding(top = 100.dp),
-            textAlign = TextAlign.Center
-        )
-    }
 
-    @Composable
-    fun LoadingUI() { //TODO make this look better
-        CircularProgressIndicator(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-        )
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(top = 16.dp)
+                    .size(100.dp)
+            )
+            Text(
+                text = "Permissions are required to proceed. Please enable them in settings.",
+                modifier = Modifier
+                    .padding(top = 16.dp, start = 24.dp, end = 24.dp),
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
