@@ -4,8 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import com.example.ezblue.viewmodel.ConnectionsScreen
-import com.example.ezblue.viewmodel.HomeScreen
+import com.example.ezblue.screens.ConnectionsScreen
+import com.example.ezblue.screens.HomeScreen
+import com.example.ezblue.screens.LoginScreen
+import com.example.ezblue.viewmodel.ConnectionsViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun NavGraph(
@@ -14,14 +17,45 @@ fun NavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = "home",
+        startDestination = "login",
     ) {
+
+        composable("login") {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("login") {
+                            inclusive = true
+                        }
+                    }
+                },
+                onRegisterClick = {
+                    navController.navigate("register")
+                }
+            )
+        }
+
         composable("home") {
-            HomeScreen(navController = navController)
+            HomeScreen(
+                navController = navController,
+                onLogoutClick = {
+                    FirebaseAuth.getInstance().signOut()
+                    navController.navigate("login") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable("connections") {
-             ConnectionsScreen(navController = navController)
+             ConnectionsScreen(
+                 navController = navController,
+                 onLogoutClick = {
+                     FirebaseAuth.getInstance().signOut()
+                     navController.navigate("login") {
+                         popUpTo("connections") { inclusive = true }
+                     }
+                 }) //No need to pass viewmodel here since Hilt is dealing with it
         }
     }
 
