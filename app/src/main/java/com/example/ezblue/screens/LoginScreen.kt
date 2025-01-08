@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,12 +31,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.ezblue.viewmodel.LoginViewModel
+import com.example.ezblue.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    loginViewModel: LoginViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit
 ) {
@@ -56,9 +58,20 @@ fun LoginScreen(
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
+                .padding(top = 100.dp, start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+
+            Text(
+                text = "EZBLUE",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = MaterialTheme.typography.headlineLarge.fontWeight,
+                ),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = email,
 
@@ -120,7 +133,7 @@ fun LoginScreen(
                             if (email.isBlank() || password.isBlank()) {
                                 errorMessage = "Email and password are required"
                             } else {
-                                loginViewModel.login(email, password,
+                                authViewModel.login(email, password,
                                     onSuccess = onLoginSuccess,
                                     onError = { errorMessage = it }
                                 )
@@ -137,7 +150,9 @@ fun LoginScreen(
 
 
                     OutlinedButton(
-                        onClick = { onRegisterClick() },
+                        onClick = {
+                            onRegisterClick()
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.secondary
@@ -152,7 +167,7 @@ fun LoginScreen(
                         onClick = {
                             email = "n1@email.com"
                             password = "Password1:"
-                            loginViewModel.login(email, password,
+                            authViewModel.login(email, password,
                                 onSuccess = onLoginSuccess,
                                 onError = { errorMessage = it }
                             )

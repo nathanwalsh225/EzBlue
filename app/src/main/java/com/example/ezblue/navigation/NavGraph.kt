@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.example.ezblue.screens.ConnectionsScreen
 import com.example.ezblue.screens.HomeScreen
 import com.example.ezblue.screens.LoginScreen
+import com.example.ezblue.screens.RegisterScreen
 import com.example.ezblue.viewmodel.ConnectionsViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -31,6 +32,21 @@ fun NavGraph(
                 },
                 onRegisterClick = {
                     navController.navigate("register")
+                }
+            )
+        }
+
+        composable("register") {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("register") {
+                            inclusive = true
+                        }
+                    }
+                },
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }
