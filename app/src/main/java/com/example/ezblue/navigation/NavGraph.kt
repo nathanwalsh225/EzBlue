@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.example.ezblue.model.Beacon
+import com.example.ezblue.screens.AutomatedMessagingSetupScreen
 import com.example.ezblue.screens.BeaconConnectionScreen
 import com.example.ezblue.screens.ConnectionsScreen
 import com.example.ezblue.screens.HomeScreen
@@ -113,6 +114,22 @@ fun NavGraph(
                         }
                     }
 
+                }
+            )
+        }
+
+        composable("AutomatedMessagingSetupScreen/{beacon}") { backStackEntry ->
+            val beacon =
+                Gson().fromJson(backStackEntry.arguments?.getString("beacon"), Beacon::class.java)
+
+            AutomatedMessagingSetupScreen(
+                navController = navController,
+                onBackClicked = {
+                    navController.popBackStack()
+                },
+                beacon = beacon,
+                onAutomatedMessagingSetupSuccess = {
+                    //navController.popBackStack()
                 }
             )
         }

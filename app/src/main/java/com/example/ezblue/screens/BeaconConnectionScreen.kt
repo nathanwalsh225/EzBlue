@@ -37,6 +37,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -70,7 +71,7 @@ fun BeaconConnectionScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val beaconName = remember { mutableStateOf(beacon.beaconName) }
-    val beaconTask = remember { mutableStateOf(0) }
+    val beaconTask = remember { mutableIntStateOf(0) }
     val beaconNote = remember { mutableStateOf("") }
     val beaconRole = remember { mutableStateOf("") }
 
