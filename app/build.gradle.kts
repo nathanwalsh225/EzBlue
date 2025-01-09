@@ -74,6 +74,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore:24.8.0")
     implementation("com.google.android.gms:play-services-base:18.0.1")
     implementation("org.mindrot:jbcrypt:0.4")
+    implementation("com.google.code.gson:gson:2.10")
     implementation(libs.accompanist.permissions)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -4,7 +4,7 @@ import java.util.Date
 
 data class Beacon(
     val beaconId: String,
-    val beaconName: String,
+    var beaconName: String,
     val role: String,
     val note: String?,
     val uuid: String,

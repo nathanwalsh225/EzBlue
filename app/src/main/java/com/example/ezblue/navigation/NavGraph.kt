@@ -1,15 +1,20 @@
 package com.example.ezblue.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
+import com.example.ezblue.model.Beacon
+import com.example.ezblue.screens.BeaconConnectionScreen
 import com.example.ezblue.screens.ConnectionsScreen
 import com.example.ezblue.screens.HomeScreen
 import com.example.ezblue.screens.LoginScreen
 import com.example.ezblue.screens.RegisterScreen
 import com.example.ezblue.viewmodel.ConnectionsViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.gson.Gson
 
 @Composable
 fun NavGraph(
@@ -64,15 +69,54 @@ fun NavGraph(
         }
 
         composable("connections") {
-             ConnectionsScreen(
-                 navController = navController,
-                 onLogoutClick = {
-                     FirebaseAuth.getInstance().signOut()
-                     navController.navigate("login") {
-                         popUpTo("connections") { inclusive = true }
-                     }
-                 }) //No need to pass viewmodel here since Hilt is dealing with it
+            ConnectionsScreen(
+                navController = navController,
+                onLogoutClick = {
+                    FirebaseAuth.getInstance().signOut()
+                    navController.navigate("login") {
+                        popUpTo("connections") { inclusive = true }
+                    } //No need to pass viewmodel here since Hilt is dealing with it
+                },
+                onConnectClick = { beacon ->
+                    //converting the beacon to json string and passing it as an argument for ease of passing through pages
+                    navController.navigate("beaconConnectionScreen/${Gson().toJson(beacon)}") {
+                        popUpTo("beaconConnectionScreen/${Gson().toJson(beacon)}") {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+
         }
+
+        composable("beaconConnectionScreen/{beacon}") { backStackEntry ->
+            //unJsoning the beacon from the json string passed as an argument
+            val beacon =
+                Gson().fromJson(backStackEntry.arguments?.getString("beacon"), Beacon::class.java)
+
+            BeaconConnectionScreen(
+                navController = navController,
+                onBackClicked = {
+                    navController.popBackStack()
+                },
+                beacon = beacon,
+                onNextClicked = { configuredBeacon ->
+                    Log.d("NavGraph", "Next clicked")
+                    Log.d("NavGraph", "Updated Beacon $configuredBeacon")
+
+                    //Automated Messaging Setup Screen
+                    if(configuredBeacon.major == 2) {
+                        navController.navigate("AutomatedMessagingSetupScreen/${Gson().toJson(configuredBeacon)}") {
+                            popUpTo("AutomatedMessagingSetupScreen/${Gson().toJson(configuredBeacon)}") {
+                                inclusive = true
+                            }
+                        }
+                    }
+
+                }
+            )
+        }
+
     }
 
 }

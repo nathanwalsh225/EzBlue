@@ -17,7 +17,7 @@ import javax.inject.Inject
 //https://developer.android.com/training/dependency-injection/hilt-android#kts
 @HiltViewModel
 class ConnectionsViewModel @Inject constructor(
-    private val connectionsRepository: ConnectionsRepository
+    //private val connectionsRepository: ConnectionsRepository
 ) : ViewModel() {
 
     private val _scannedBeacons =

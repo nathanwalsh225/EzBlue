@@ -51,7 +51,8 @@ import kotlinx.coroutines.delay
 fun ConnectionsScreen(
     navController: NavController,
     connectionsViewModel: ConnectionsViewModel = hiltViewModel(),
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    onConnectClick: (Beacon) -> Unit
 ) {
     //Making this a LiveData so I can update it in the ViewModel easier
     val scannedBeacons by connectionsViewModel.scannedBeacons.observeAsState(emptyList())
@@ -150,7 +151,7 @@ fun ConnectionsScreen(
                     BeaconRow(
                         beacon = beacon,
                         onConnectClick = {
-                            //connectionsViewModel.connectToBeacon(beacon)
+                            onConnectClick(beacon)
                         }
                     )
                 }
