@@ -3,6 +3,7 @@ package com.example.ezblue.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -48,6 +49,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .pointerInput(Unit) {
                 detectTapGestures(onTap = {
                     focusManager.clearFocus()
@@ -55,13 +57,12 @@ fun LoginScreen(
             }
     ) {
         Column(
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(top = 100.dp, start = 16.dp, end = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center)
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
             Text(
                 text = "EZBLUE",
                 style = MaterialTheme.typography.headlineLarge.copy(
@@ -70,20 +71,23 @@ fun LoginScreen(
                 ),
             )
 
+
             Spacer(modifier = Modifier.height(16.dp))
+
 
             OutlinedTextField(
                 value = email,
 
                 onValueChange = { email = it },
                 label = {
-                    Text("Email", color = MaterialTheme.colorScheme.primary)
+                    Text("Email", color = MaterialTheme.colorScheme.secondary)
                 },
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = MaterialTheme.colorScheme.primary,
-                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
                     focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary
+                    unfocusedBorderColor = MaterialTheme.colorScheme.secondary
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -94,15 +98,16 @@ fun LoginScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password", color = MaterialTheme.colorScheme.primary) },
+                label = { Text("Password", color = MaterialTheme.colorScheme.secondary) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = MaterialTheme.colorScheme.primary,
-                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
                     focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.secondary
                 ),
                 visualTransformation = PasswordVisualTransformation()
             )
@@ -114,73 +119,67 @@ fun LoginScreen(
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
+        }
 
 
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(16.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Button(
+                onClick = {
+                    if (email.isBlank() || password.isBlank()) {
+                        errorMessage = "Email and password are required"
+                    } else {
+                        authViewModel.login(email, password,
+                            onSuccess = onLoginSuccess,
+                            onError = { errorMessage = it }
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
+                )
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(vertical = 16.dp),
-                ) {
-                    Button(
-                        onClick = {
-                            if (email.isBlank() || password.isBlank()) {
-                                errorMessage = "Email and password are required"
-                            } else {
-                                authViewModel.login(email, password,
-                                    onSuccess = onLoginSuccess,
-                                    onError = { errorMessage = it }
-                                )
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            contentColor = MaterialTheme.colorScheme.onSecondary
-                        )
-                    ) {
-                        Text("LOGIN")
-                    }
+                Text("LOGIN")
+            }
 
 
-                    OutlinedButton(
-                        onClick = {
-                            onRegisterClick()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.secondary
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("REGISTER")
-                    }
+            OutlinedButton(
+                onClick = {
+                    onRegisterClick()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.secondary
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+            ) {
+                Text("REGISTER")
+            }
 
 
-                    Button(
-                        onClick = {
-                            email = "n1@email.com"
-                            password = "Password1:"
-                            authViewModel.login(email, password,
-                                onSuccess = onLoginSuccess,
-                                onError = { errorMessage = it }
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            contentColor = MaterialTheme.colorScheme.onSecondary
-                        )
-                    ) {
-                        Text("INSTANT LOGIN")
-                    }
-                }
+            Button(
+                onClick = {
+                    email = "n1@email.com"
+                    password = "Password1:"
+                    authViewModel.login(email, password,
+                        onSuccess = onLoginSuccess,
+                        onError = { errorMessage = it }
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
+                )
+            ) {
+                Text("INSTANT LOGIN")
             }
         }
     }

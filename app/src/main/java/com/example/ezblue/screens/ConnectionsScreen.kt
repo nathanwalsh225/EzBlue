@@ -1,5 +1,12 @@
 package com.example.ezblue.screens
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -16,11 +24,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -30,7 +43,10 @@ import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.navigation.MainScreenWithSideBar
 import com.example.ezblue.viewmodel.ConnectionsViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
 
+@SuppressLint("MissingPermission")
 @Composable
 fun ConnectionsScreen(
     navController: NavController,
@@ -39,6 +55,39 @@ fun ConnectionsScreen(
 ) {
     //Making this a LiveData so I can update it in the ViewModel easier
     val scannedBeacons by connectionsViewModel.scannedBeacons.observeAsState(emptyList())
+    val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+    val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
+    var scanning = remember { mutableStateOf(false) }
+
+    //Keeping scan call back up here in the composable rather then making a seperate function below
+    //because I needed to keep the same instance of the scan callback to be able to stop the scan, but I also
+    //needed to be able to use my connections view model so Its up here for ease of use
+    //I dont see any issue with it being here but what do I know
+    val scanCallback = remember {
+        object : ScanCallback() {
+            @RequiresApi(Build.VERSION_CODES.R)
+            @SuppressLint("MissingPermission")
+            override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                val device = result?.device
+                val rssi = result?.rssi
+
+                connectionsViewModel.addBeacon(device!!, rssi!!)
+            }
+
+            override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+                results?.forEach { result ->
+                    val device = result.device
+                    val rssi = result.rssi
+                    connectionsViewModel.addBeacon(device, rssi)
+                }
+            }
+
+            override fun onScanFailed(error: Int) {
+                Log.d("ConnectionsViewModel", "Scan failed: $error")
+            }
+        }
+    }
+
 
 
     MainScreenWithSideBar(
@@ -55,20 +104,56 @@ fun ConnectionsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Connect to a Beacon",
+                text = if (scanning.value) "Scanning..." else "Connect to a Beacon",
                 style = MaterialTheme.typography.headlineMedium
             )
-            IconButton(onClick = { connectionsViewModel.getBeacons() }) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+
+            if (!scanning.value) {
+                IconButton(onClick = {
+                    if (bluetoothAdapter?.isEnabled == true) {
+                        //starting the bluetooth scan
+                        bluetoothLeScanner?.startScan(scanCallback)
+                        Log.d("ConnectionsViewModel", "Scan started")
+                        scanning.value = true;
+                    } else {
+                        Log.d("ConnectionsViewModel", "Bluetooth Scanning not enabled")
+                    }
+                }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                }
+            } else {
+                IconButton(onClick = {
+                    //stopping the scan
+                    bluetoothLeScanner?.stopScan(scanCallback)
+                    Log.d("ConnectionsViewModel", "Scan stopped")
+                    scanning.value = false;
+                }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Stop")
+                }
             }
         }
 
-        // List of Beacons
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(scannedBeacons) { beacon ->
-                BeaconRow(beacon = beacon, onConnectClick = { connectionsViewModel.connectToBeacon(beacon) })
+        if (scannedBeacons.isEmpty() && !scanning.value) {
+            //some text to just inform the user to start scanning
+            Text(
+                text = "No devices found. Try scanning again.",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                textAlign = TextAlign.Center
+            )
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(scannedBeacons) { beacon ->
+                    BeaconRow(
+                        beacon = beacon,
+                        onConnectClick = {
+                            //connectionsViewModel.connectToBeacon(beacon)
+                        }
+                    )
+                }
             }
         }
     }
@@ -85,6 +170,13 @@ fun BeaconRow(beacon: Beacon, onConnectClick: () -> Unit) {
         beacon.signalStrength > -40 -> Color.Green
         beacon.signalStrength > -70 -> Color.Yellow
         else -> Color.Red
+    }
+
+    //Beacon status will be unavailable if the signal strength is less than -85 or if the beacon is already connected
+    beacon.status = when {
+        beacon.signalStrength < -85 -> BeaconStatus.UNAVAILABLE
+        beacon.status == BeaconStatus.CONNECTED -> BeaconStatus.CONNECTED
+        else -> BeaconStatus.AVAILABLE
     }
 
     Row(
@@ -109,19 +201,9 @@ fun BeaconRow(beacon: Beacon, onConnectClick: () -> Unit) {
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.secondary
             ),
-            enabled = beacon.status != BeaconStatus.CONNECTED && beacon.status != BeaconStatus.UNAVAILABLE
+            enabled = beacon.status != BeaconStatus.CONNECTED && beacon.status != BeaconStatus.UNAVAILABLE && beacon.signalStrength > -85
         ) {
             Text("Connect")
         }
     }
 }
-
-
-//@Preview
-//@Composable
-//fun ConnectionsScreenPreview() {
-//    ConnectionsScreen(
-//        navController = rememberNavController(),
-//        connectionsViewModel = ConnectionsViewModel()
-//    )
-//}

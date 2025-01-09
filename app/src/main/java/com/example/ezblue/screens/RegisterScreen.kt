@@ -94,8 +94,11 @@ fun RegisterScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = MaterialTheme.colorScheme.primary,
-                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.secondary
                 ),
             )
 
@@ -107,8 +110,11 @@ fun RegisterScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = MaterialTheme.colorScheme.primary,
-                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.secondary
                 ),
             )
 
@@ -120,8 +126,11 @@ fun RegisterScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = MaterialTheme.colorScheme.primary,
-                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.secondary
                 ),
             )
 
@@ -133,8 +142,11 @@ fun RegisterScreen(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = MaterialTheme.colorScheme.primary,
-                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                    focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.secondary
                 ),
                 visualTransformation = PasswordVisualTransformation()
             )
