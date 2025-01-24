@@ -39,6 +39,7 @@ import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.navigation.MainScreenWithSideBar
 import com.example.ezblue.viewmodel.ConnectionsViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.text.SimpleDateFormat
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -82,6 +83,22 @@ fun ConnectionsScreen(
             }
         }
     }
+
+    val testBeacon = Beacon(
+            beaconId = "beacon2",
+            beaconName = "Car Beacon",
+            role = "Automated Messaging",
+            uuid = "12345678-1234-5678-1234-123456789def",
+            major = 1,
+            minor = 2,
+            signalStrength = -70,
+            isConnected = true,
+            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-11T12:00:00Z"),
+            ownerId = "user1",
+            lastDetected = null,
+            note = null
+        )
+
 
 
 
@@ -137,6 +154,13 @@ fun ConnectionsScreen(
                     .padding(16.dp),
                 textAlign = TextAlign.Center
             )
+            BeaconRow( //Test beacon used only for checking functionally while using the emulator, will be removed eventually
+                beacon = testBeacon,
+                onConnectClick = {
+                    onConnectClick(testBeacon)
+                }
+            )
+
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -149,6 +173,7 @@ fun ConnectionsScreen(
                         }
                     )
                 }
+
             }
         }
     }

@@ -239,10 +239,8 @@ fun BeaconConnectionScreen(
                     ),
                 )
 
-
-
                 OutlinedTextField(
-                    value = beaconNote.value, //TODO Implement automatic note generation based on task
+                    value = setBeaconNotePlaceholder(beaconTask.intValue),
                     onValueChange = { beaconNote.value = it },
                     placeholder = { Text("Leave a short note to distinguish your beacon...") },
                     modifier = Modifier
@@ -317,6 +315,16 @@ fun BeaconConnectionScreen(
     }
 }
 
+fun setBeaconNotePlaceholder(task: Int): String {
+    return when (task) {
+        1 -> "My Home Automation Beacon!"
+        2 -> "My Automated Messaging Beacon!"
+        3 -> "My Task Reminder Beacon!"
+        4 -> "Receive emergency alerts and detect motion"
+        5 -> "Open links with a tap"
+        else -> ""
+    }
+}
 
 @Preview
 @Composable

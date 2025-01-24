@@ -465,10 +465,14 @@ fun ContactPickerPopup(
         }
     }
 }
-
+//TODO more testing for this
 //very basic function to just clean the number so something like 087 653 8986 will be +353876538986
 fun cleanNumber(number: String): String {
-    return number.replaceFirst("0", "+353").replace(" ", "")
+    return if (number.startsWith("0")) {
+        number.replaceFirst("0", "+353").replace(" ", "")
+    } else {
+        number.replace(" ", "")
+    }
 }
 
 fun checkPermissions(): Boolean {
