@@ -31,16 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.model.Configurations
 import com.example.ezblue.model.Visibility
 import com.example.ezblue.navigation.MainScreenWithSideBar
-import com.example.ezblue.ui.theme.EzBlueTheme
 import java.text.SimpleDateFormat
 
 @Composable
