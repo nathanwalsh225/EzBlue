@@ -2,12 +2,15 @@ package com.example.ezblue.viewmodel
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.repositories.ConnectionsRepository
+import com.example.ezblue.repositories.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.Error
 import java.util.Date
@@ -18,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ConnectionsViewModel @Inject constructor(
     //private val connectionsRepository: ConnectionsRepository
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _scannedBeacons =
@@ -41,7 +45,8 @@ class ConnectionsViewModel @Inject constructor(
             // Beacon is not already in the list so add it
             val newBeacon = Beacon(
                 beaconId = device.address,
-                beaconName = device.name ?: "Unknown", //Alot of unknown values but they can be populated later when the user connects
+                beaconName = device.name
+                    ?: "Unknown", //Alot of unknown values but they can be populated later when the user connects
                 role = "Unknown",
                 uuid = "Unknown",
                 major = 0,
@@ -54,10 +59,43 @@ class ConnectionsViewModel @Inject constructor(
                 note = null,
                 status = BeaconStatus.AVAILABLE
             )
-            beaconList[beaconId] = newBeacon //add the new beacon to the list under its ID / Mac Address
+            beaconList[beaconId] =
+                newBeacon //add the new beacon to the list under its ID / Mac Address
         }
         //update the list with the new or updated beacon values
         _scannedBeacons.postValue(beaconList.values.toList())
+    }
+
+    fun connectToBeacon(beacon: Beacon, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+
+        val userEmail = FirebaseAuth.getInstance().currentUser!!.email
+        var ownerId = ""
+
+        //function to get the userId to set for beacon
+        userRepository.getUserIdByEmail( //NEED TO MAKE THIS WAIT FOR THE OWNER ID TO COME BACK *NOT WORKING*
+            email = userEmail!!,
+            onSuccess = { userId ->
+                ownerId = userId
+            },
+            onError = { error ->
+                Log.d("TestingStuff", "Error: $error")
+            }
+        )
+
+        Log.d("TestingStuff", "Owner ID: $ownerId")
+
+        if (ownerId != "") {
+            val beaconSetup = beacon.copy(
+                isConnected = true,
+                lastDetected = Date(),
+                ownerId = ownerId
+            )
+
+            Log.d("TestingStuff", "Connected to beacon: $beaconSetup")
+            //connectionsRepository.connectToBeacon(beacon)
+        } else {
+            onFailure("Failed to connect to beacon")
+        }
     }
 
 }

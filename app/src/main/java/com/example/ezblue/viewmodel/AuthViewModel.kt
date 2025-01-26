@@ -4,7 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.ezblue.repositories.UserRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.auth.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.mindrot.jbcrypt.BCrypt
 import javax.inject.Inject
@@ -16,7 +18,6 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     fun login(email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
-
         //Again, firebase automatically protects the passwords here so no need to unhash it, but I will later for account updates if the user needs it
         firebaseAuth.signInWithEmailAndPassword(email.trim().lowercase(), password)
             .addOnCompleteListener { task ->
@@ -75,6 +76,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun fetchCurrentUser(): String {
+        return firebaseAuth.currentUser!!.uid
+    }
 
     private fun checkEmail(email: String, onResult: (Boolean) -> Unit) {
         firebaseAuth.fetchSignInMethodsForEmail(email)

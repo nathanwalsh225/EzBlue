@@ -285,8 +285,8 @@ fun BeaconConnectionScreen(
                         onClick = {
                             val configuredBeacon = beacon.copy(
                                 beaconName = beaconName.value,
-                                note = beaconNote.value,
-                                major = beaconTask.value,
+                                note = if (beaconNote.value.equals("")) setBeaconNotePlaceholder(beaconTask.intValue) else beaconNote.value,
+                                major = beaconTask.intValue,
                                 role = beaconRole.value
                             )
 
@@ -326,34 +326,34 @@ fun setBeaconNotePlaceholder(task: Int): String {
     }
 }
 
-@Preview
-@Composable
-fun BeaconConnectionScreenPreview() {
-
-    // Provide a dummy or default ViewModel instance
-    val mockViewModel = ConnectionsViewModel()
-    val navController = rememberNavController()
-    EzBlueTheme {
-        BeaconConnectionScreen(
-            navController = navController,
-            connectionsViewModel = mockViewModel,
-            onBackClicked = {},
-            beacon = Beacon(
-                beaconId = "HSNN-1234-ABCD-2345",
-                beaconName = "Nathans - BLE BEACON", //Alot of unknown values but they can be populated later when the user connects
-                role = "Unknown",
-                uuid = "Unknown",
-                major = 0,
-                minor = 0,
-                createdAt = Date(),
-                lastDetected = Date(),
-                ownerId = "Unknown",
-                signalStrength = 32,
-                isConnected = false,
-                note = null,
-                status = BeaconStatus.AVAILABLE
-            ),
-            onNextClicked = {}
-        )
-    }
-}
+//@Preview
+//@Composable
+//fun BeaconConnectionScreenPreview() {
+//
+//    // Provide a dummy or default ViewModel instance
+//    val mockViewModel = ConnectionsViewModel()
+//    val navController = rememberNavController()
+//    EzBlueTheme {
+//        BeaconConnectionScreen(
+//            navController = navController,
+//            connectionsViewModel = mockViewModel,
+//            onBackClicked = {},
+//            beacon = Beacon(
+//                beaconId = "HSNN-1234-ABCD-2345",
+//                beaconName = "Nathans - BLE BEACON", //Alot of unknown values but they can be populated later when the user connects
+//                role = "Unknown",
+//                uuid = "Unknown",
+//                major = 0,
+//                minor = 0,
+//                createdAt = Date(),
+//                lastDetected = Date(),
+//                ownerId = "Unknown",
+//                signalStrength = 32,
+//                isConnected = false,
+//                note = null,
+//                status = BeaconStatus.AVAILABLE
+//            ),
+//            onNextClicked = {}
+//        )
+//    }
+//}

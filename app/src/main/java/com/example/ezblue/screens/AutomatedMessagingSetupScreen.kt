@@ -61,6 +61,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.ui.theme.EzBlueTheme
+import com.example.ezblue.viewmodel.ConnectionsViewModel
 import com.example.ezblue.viewmodel.MessagingViewModel
 import java.util.Date
 
@@ -71,6 +72,7 @@ fun AutomatedMessagingSetupScreen(
     navController: NavController,
     beacon: Beacon,
     messagingViewModel: MessagingViewModel = hiltViewModel(),
+    connectionsViewModel: ConnectionsViewModel = hiltViewModel(),
     onBackClicked: () -> Unit,
     onAutomatedMessagingSetupSuccess: () -> Unit
 ) {
@@ -348,7 +350,19 @@ fun AutomatedMessagingSetupScreen(
 
                         OutlinedButton(
                             onClick = {
-                                onNextClicked.value = !onNextClicked.value
+                                //Where the task will be saved
+                                Log.d("TestingStuff", "Save")
+                                Log.d("TestingStuff", "$beacon")
+                                Log.d("TestingStuff", "${beacon.note}")
+                                connectionsViewModel.connectToBeacon(
+                                    beacon = beacon,
+                                    onSuccess = {
+                                        //onAutomatedMessagingSetupSuccess()
+                                    },
+                                    onFailure = {
+                                        Log.d("TestingStuff", "Failed to connect to beacon")
+                                    }
+                                )
                             },
                             modifier = Modifier
                                 .weight(1f)
@@ -360,7 +374,7 @@ fun AutomatedMessagingSetupScreen(
                             shape = MaterialTheme.shapes.medium,
                         ) {
                             Text(
-                                text = "Next",
+                                text = "Save",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -402,16 +416,9 @@ fun ContactPickerPopup(
                         val name =
                             it.getString(it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)) //gpt recommended using "ContactsContract.Contacts" but this worked better for me
 
-                        Log.d("TestingStuff", "Other number : $number, Other name: $name")
                         contactName.value =
                             name //assiging the name and the number to the mutable state variables that i passed so they can be used when the user selects a contact
                         contactNumber.value = cleanNumber(number)
-
-                        Log.d(
-                            "TestingStuff",
-                            "AFTER: Other number : ${contactNumber}, Other name: $name"
-                        )
-
                     }
                 }
             }
@@ -465,7 +472,7 @@ fun ContactPickerPopup(
         }
     }
 }
-//TODO more testing for this
+//TODO more testing for this and incorporate foreign number support
 //very basic function to just clean the number so something like 087 653 8986 will be +353876538986
 fun cleanNumber(number: String): String {
     return if (number.startsWith("0")) {
