@@ -65,7 +65,7 @@ class AuthViewModel @Inject constructor(
                             }
 
                         val hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                        userRepository.createUser(email, hashedPassword, firstName, lastName, onSuccess, onError) //TODO implement failure listener
+                        userRepository.createUser(user!!.uid ,email, hashedPassword, firstName, lastName, onSuccess, onError) //TODO implement failure listener
 
                     } else {
                         // Error for any issues in registration

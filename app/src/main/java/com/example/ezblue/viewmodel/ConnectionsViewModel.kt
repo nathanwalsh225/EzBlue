@@ -3,6 +3,7 @@ package com.example.ezblue.viewmodel
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -10,6 +11,7 @@ import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.repositories.ConnectionsRepository
 import com.example.ezblue.repositories.UserRepository
+import com.google.android.gms.tasks.Tasks.await
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.Error
@@ -23,6 +25,8 @@ class ConnectionsViewModel @Inject constructor(
     //private val connectionsRepository: ConnectionsRepository
     private val userRepository: UserRepository
 ) : ViewModel() {
+
+
 
     private val _scannedBeacons =
         MutableLiveData<List<Beacon>>() //customizable beacon list for use only by the view model
@@ -67,24 +71,9 @@ class ConnectionsViewModel @Inject constructor(
     }
 
     fun connectToBeacon(beacon: Beacon, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val ownerId = FirebaseAuth.getInstance().currentUser!!.uid
 
-        val userEmail = FirebaseAuth.getInstance().currentUser!!.email
-        var ownerId = ""
-
-        //function to get the userId to set for beacon
-        userRepository.getUserIdByEmail( //NEED TO MAKE THIS WAIT FOR THE OWNER ID TO COME BACK *NOT WORKING*
-            email = userEmail!!,
-            onSuccess = { userId ->
-                ownerId = userId
-            },
-            onError = { error ->
-                Log.d("TestingStuff", "Error: $error")
-            }
-        )
-
-        Log.d("TestingStuff", "Owner ID: $ownerId")
-
-        if (ownerId != "") {
+        try {
             val beaconSetup = beacon.copy(
                 isConnected = true,
                 lastDetected = Date(),
@@ -93,9 +82,10 @@ class ConnectionsViewModel @Inject constructor(
 
             Log.d("TestingStuff", "Connected to beacon: $beaconSetup")
             //connectionsRepository.connectToBeacon(beacon)
-        } else {
-            onFailure("Failed to connect to beacon")
+        } catch (e: Error) {
+            onFailure("Failed to connect to beacon - Error: $e")
         }
+
     }
 
 }

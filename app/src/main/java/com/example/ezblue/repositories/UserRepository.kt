@@ -16,11 +16,12 @@ class UserRepository @Inject constructor(
        private const val USERS_COLLECTION = "Users"
     }
 
-    fun createUser(email: String, hashedPassword: String, firstName: String, lastName: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    //TODO Make sure to implement no duplicate emails, if deleted from Auth on firebase, users can still make new accounts with old emails
+    fun createUser(userId: String, email: String, hashedPassword: String, firstName: String, lastName: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         firestore.collection(USERS_COLLECTION)
             .add(
                 mapOf(
-                    "userId" to firestore.collection(USERS_COLLECTION).document().id, //auto generated id
+                    "userId" to userId, //Rather then use a different Id for the user, I am going to use the same ID that firebase gives the user for authentication
                     "email" to email,
                     "firstName" to firstName,
                     "lastName" to lastName,
@@ -37,17 +38,21 @@ class UserRepository @Inject constructor(
             }
     }
 
+    //Turns out I am an idiot and didn't need to do all of this because I could have just been using the firebase auth to get the user id
+    //so I refactored the User table in the DB to instead of generating a new Id when the user is generated, I just use the firebase auth id
+    //that firebase generates already for when a user is authenticated - I will keep this here for reference for getting data from the DB for now
     //https://firebase.google.com/docs/firestore/query-data/get-data#kotlin
     //https://stackoverflow.com/questions/71904044/how-to-retrieve-data-from-firestore-and-store-it-to-array-kotlin-android-studi
-    fun getUserIdByEmail(email: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+    fun getUserIdByEmail(email: String, onSuccess: (Any) -> Unit, onError: (String) -> Unit) {
         val reference = FirebaseFirestore.getInstance().collection(USERS_COLLECTION)
 
-        reference.whereEqualTo("email", email).get().addOnSuccessListener { result ->
-            if (result != null) {
-                val document = result.documents[0]
-                val userId = document.get("userId")
-                Log.d("TestingStuff", "User ID: $userId")
-                onSuccess(userId.toString())
+        //Refactored to be on complete listener rather then success listener so the application waits for the data to be retrieved
+        reference.whereEqualTo("email", email).get().addOnCompleteListener { task ->
+            val document = task.result.documents[0]
+            val userId = document.get("userId")
+            Log.d("TestingStuff", "DocumentSnapshot data: ${userId}")
+            if (userId != null) {
+                onSuccess(userId)
             } else {
                 Log.d("TestingStuff", "No such document")
                 onError("No such document")
@@ -57,4 +62,5 @@ class UserRepository @Inject constructor(
             onError(exception.message ?: "Failed to get user")
         }
     }
+
 }
