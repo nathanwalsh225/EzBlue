@@ -40,8 +40,9 @@ class AuthViewModel @Inject constructor(
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-
-        checkEmail(email.trim().lowercase()) { emailInUse -> //Check to make sure email isnt in use (got this from my StudyPath code)
+        checkEmail(
+            email.trim().lowercase()
+        ) { emailInUse -> //Check to make sure email isnt in use (got this from my StudyPath code)
             Log.d("TaskScreen", "Email in use $emailInUse")
 
             if (emailInUse) {
@@ -49,44 +50,60 @@ class AuthViewModel @Inject constructor(
                 onError("Email already in use")
             } else {
                 //firebase automatically protects the passwords here, I only need it for my DB
-                firebaseAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        //Getting the users name just to save it here so I can use it in the app
-                        val user = firebaseAuth.currentUser
-                        val profileUpdates = UserProfileChangeRequest.Builder()
-                            .setDisplayName("$firstName $lastName")
-                            .build()
+                firebaseAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            //Getting the users name just to save it here so I can use it in the app
+                            val user = firebaseAuth.currentUser
+                            val profileUpdates = UserProfileChangeRequest.Builder()
+                                .setDisplayName("$firstName $lastName")
+                                .build()
 
-                        user?.updateProfile(profileUpdates)
-                            ?.addOnCompleteListener { profileTask ->
-                                if (profileTask.isSuccessful) {
-                                    Log.d("TaskScreen", "User profile updated.")
+                            user?.updateProfile(profileUpdates)
+                                ?.addOnCompleteListener { profileTask ->
+                                    if (profileTask.isSuccessful) {
+                                        Log.d("TaskScreen", "User profile updated.")
+                                    }
                                 }
-                            }
 
-                        val hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                        userRepository.createUser(user!!.uid ,email, hashedPassword, firstName, lastName, onSuccess, onError) //TODO implement failure listener
+                            val hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+                            userRepository.createUser(
+                                user!!.uid,
+                                email,
+                                hashedPassword,
+                                firstName,
+                                lastName,
+                                onSuccess,
+                                onError
+                            ) //TODO implement failure listener
 
-                    } else {
-                        // Error for any issues in registration
-                        println("Registration error: ${task.exception?.message}")
+                        } else {
+                            // Error for any issues in registration
+                            onError("Email already in use")
+                            println("Registration error: ${task.exception?.message}")
+                        }
                     }
-                }
             }
         }
     }
 
-    fun fetchCurrentUser(): String {
-        return firebaseAuth.currentUser!!.uid
-    }
 
     private fun checkEmail(email: String, onResult: (Boolean) -> Unit) {
         firebaseAuth.fetchSignInMethodsForEmail(email)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val signInMethods = task.result?.signInMethods
-                    val emailExists = !signInMethods.isNullOrEmpty()
-                    onResult(emailExists)
+                val signInMethods = task.result?.signInMethods
+                val emailExists = signInMethods.isNullOrEmpty()
+                Log.d("TestingStuff", "Email exists: $emailExists")
+                if (emailExists) {
+                    Log.d("TestingStuff", "checking db now")
+                    userRepository.getUserIdByEmail( //why crash when register
+                        email = email,
+                        onSuccess = {
+                            onResult(true)
+                        },
+                        onError = {
+                            onResult(false)
+                        })
                 } else {
                     onResult(false)
                 }

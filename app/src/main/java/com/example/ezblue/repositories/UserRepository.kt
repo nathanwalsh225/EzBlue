@@ -38,28 +38,25 @@ class UserRepository @Inject constructor(
             }
     }
 
-    //Turns out I am an idiot and didn't need to do all of this because I could have just been using the firebase auth to get the user id
-    //so I refactored the User table in the DB to instead of generating a new Id when the user is generated, I just use the firebase auth id
-    //that firebase generates already for when a user is authenticated - I will keep this here for reference for getting data from the DB for now
+
+
+    //Turns out I am not an idiot! Yay, I was able to repurpose this code to check if the user email already exists in the database before registering
     //https://firebase.google.com/docs/firestore/query-data/get-data#kotlin
     //https://stackoverflow.com/questions/71904044/how-to-retrieve-data-from-firestore-and-store-it-to-array-kotlin-android-studi
-    fun getUserIdByEmail(email: String, onSuccess: (Any) -> Unit, onError: (String) -> Unit) {
+    fun getUserIdByEmail(email: String, onSuccess: () -> Unit, onError: (Any) -> Unit) {
         val reference = FirebaseFirestore.getInstance().collection(USERS_COLLECTION)
 
-        //Refactored to be on complete listener rather then success listener so the application waits for the data to be retrieved
         reference.whereEqualTo("email", email).get().addOnCompleteListener { task ->
-            val document = task.result.documents[0]
-            val userId = document.get("userId")
-            Log.d("TestingStuff", "DocumentSnapshot data: ${userId}")
-            if (userId != null) {
-                onSuccess(userId)
+            if (task.isSuccessful) {
+                val document = task.result.documents[0]
+                if (document != null) {
+                    onSuccess()
+                } else {
+                    onError("User not found")
+                }
             } else {
-                Log.d("TestingStuff", "No such document")
-                onError("No such document")
+                onError("Error contacting server: ${task.exception}")
             }
-        }.addOnFailureListener { exception ->
-            Log.d("TestingStuff", "get failed with ", exception)
-            onError(exception.message ?: "Failed to get user")
         }
     }
 
