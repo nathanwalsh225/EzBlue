@@ -104,9 +104,9 @@ fun AutomatedMessagingSetupScreen(
 
     //Checking two permissions so need a check to see which ones are allowed and which ones are not
     val contactsGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.READ_CONTACTS
-        ) == PermissionChecker.PERMISSION_GRANTED
+        context,
+        Manifest.permission.READ_CONTACTS
+    ) == PermissionChecker.PERMISSION_GRANTED
 
     val smsGranted = ContextCompat.checkSelfPermission(
         context,
@@ -124,7 +124,12 @@ fun AutomatedMessagingSetupScreen(
     //requestPermission variable and use that will tell the launcher when to go
     LaunchedEffect(requestPermission.value) {
         if (requestPermission.value) {
-            requestPermissionLauncher.launch(arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS))
+            requestPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.SEND_SMS,
+                    Manifest.permission.READ_CONTACTS
+                )
+            )
         }
     }
 
@@ -302,7 +307,8 @@ fun AutomatedMessagingSetupScreen(
                                 contactNumber.value,
                                 contactMsg,
                                 onSuccess = {
-                                    Toast.makeText(context, "Message Sent", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Message Sent", Toast.LENGTH_LONG)
+                                        .show()
                                     //onAutomatedMessagingSetupSuccess()
                                 },
                                 context = context
@@ -351,16 +357,18 @@ fun AutomatedMessagingSetupScreen(
                         OutlinedButton(
                             onClick = {
                                 //Where the task will be saved
-                                Log.d("TestingStuff", "Save")
-                                Log.d("TestingStuff", "$beacon")
-                                Log.d("TestingStuff", "${beacon.note}")
                                 connectionsViewModel.connectToBeacon(
                                     beacon = beacon,
+                                    context = context,
+                                    parameters = mapOf(
+                                        "contactNumber" to contactNumber.value,
+                                        "message" to contactMsg
+                                    ),
                                     onSuccess = {
                                         //onAutomatedMessagingSetupSuccess()
                                     },
-                                    onFailure = {
-                                        Log.d("TestingStuff", "Failed to connect to beacon")
+                                    onFailure = { error ->
+                                        Log.d("TestingStuff", "Failed to connect to beacon - ERROR: $error")
                                     }
                                 )
                             },
@@ -472,6 +480,7 @@ fun ContactPickerPopup(
         }
     }
 }
+
 //TODO more testing for this and incorporate foreign number support
 //very basic function to just clean the number so something like 087 653 8986 will be +353876538986
 fun cleanNumber(number: String): String {

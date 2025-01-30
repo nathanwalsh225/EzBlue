@@ -102,9 +102,6 @@ fun NavGraph(
                 },
                 beacon = beacon,
                 onNextClicked = { configuredBeacon ->
-                    Log.d("NavGraph", "Next clicked")
-                    Log.d("NavGraph", "Updated Beacon $configuredBeacon")
-
                     //Automated Messaging Setup Screen
                     if(configuredBeacon.major == 2) {
                         navController.navigate("AutomatedMessagingSetupScreen/${Gson().toJson(configuredBeacon)}") {

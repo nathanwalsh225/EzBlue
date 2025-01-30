@@ -53,7 +53,8 @@ fun ConnectionsScreen(
     val scannedBeacons by connectionsViewModel.scannedBeacons.observeAsState(emptyList())
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
-    var scanning = remember { mutableStateOf(true) }
+
+    val scanning = remember { mutableStateOf(false) }
 
     //Keeping scan call back up here in the composable rather then making a seperate function below
     //because I needed to keep the same instance of the scan callback to be able to stop the scan, but I also
@@ -74,6 +75,7 @@ fun ConnectionsScreen(
                 results?.forEach { result ->
                     val device = result.device
                     val rssi = result.rssi
+
                     connectionsViewModel.addBeacon(device, rssi)
                 }
             }

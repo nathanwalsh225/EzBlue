@@ -1,14 +1,39 @@
 package com.example.ezblue.repositories
 
+import com.example.ezblue.model.Beacon
+import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 
 class ConnectionsRepository @Inject constructor(
-   // private val apiClient: ApiClient
+    private val firestore: FirebaseFirestore,
 ) {
 
-    fun fetchBeacons(): List<String> {
-        //apiClient.fetchBeacons()
-        return listOf("Beacon 1", "Beacon 2", "Beacon 3")
+    companion object {
+        private const val BEACON_COLLECTION = "Beacons"
+    }
+
+    fun connectToBeacon(beacon: Beacon, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        firestore.collection(BEACON_COLLECTION)
+            .add(
+                mapOf(
+                    "beaconId" to beacon.beaconId,
+                    "beaconName" to beacon.beaconName,
+                    "beaconNote" to beacon.note,
+                    "createdAt" to beacon.createdAt,
+                    "lastDetected" to beacon.lastDetected,
+                    "major" to beacon.major,
+                    "minor" to beacon.minor,
+                    "ownerId" to beacon.ownerId,
+                    "role" to beacon.role,
+                    "uuid" to beacon.uuid //TODO: Sort UID
+                )
+            )
+            .addOnSuccessListener {
+                onSuccess()
+            }
+            .addOnFailureListener {
+                onError("Failed to connect to Beacon - ${it.message}")
+            }
     }
 
 
