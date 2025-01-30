@@ -14,4 +14,4 @@ Next order of buisness is going to be removing the place holder beacons on the h
 
 ## Update - 30/01/25
 The beacon connection itself was quite a bit harder then I had anticipated, none the less its working now because I am an animal (it took so much debugging 😒) 
-as of now the Gatt connection is working, but thats the extent of the connection, so I'll work on getting the beacons displaying on the home screen and then ill work on getting the tasks to run once entering range - I am manually running them at the moment until I am sure I have set up the connection correctly in order to avoid sending a messaage a billion times or something.
+as of now the Gatt connection is working, but thats the extent of the connection, so I'll work on getting the beacons displaying on the home screen and then ill work on getting the tasks to run once entering range - I am manually running them at the moment until I am sure I have set up the connection correctly in order to avoid sending a message a billion times or something.
