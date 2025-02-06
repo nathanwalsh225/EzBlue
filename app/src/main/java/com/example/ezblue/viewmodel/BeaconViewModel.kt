@@ -13,9 +13,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
+import com.example.ezblue.model.Configuration
 import com.example.ezblue.model.Visibility
 import com.example.ezblue.repositories.ConfigurationRepository
-import com.example.ezblue.repositories.ConnectionsRepository
+import com.example.ezblue.repositories.BeaconRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.lang.Error
@@ -25,8 +26,8 @@ import javax.inject.Inject
 //First time using Hilt so this should be fun (Based on the setup alone, this will not be fun)
 //https://developer.android.com/training/dependency-injection/hilt-android#kts
 @HiltViewModel
-class ConnectionsViewModel @Inject constructor(
-    private val connectionsRepository: ConnectionsRepository,
+class BeaconViewModel @Inject constructor(
+    private val beaconRepository: BeaconRepository,
     private val configurationsRepository: ConfigurationRepository,
 ) : ViewModel() {
 
@@ -37,6 +38,20 @@ class ConnectionsViewModel @Inject constructor(
     private val connectedGatts = mutableMapOf<String, BluetoothGatt>()
     private val beaconList = mutableMapOf<String, Beacon>()
     private var bluetoothResetAttempts = 0
+
+    fun fetchBeaconConfigurations(beaconId: String, onSuccess: (Configuration) -> Unit, onFailure: (String) -> Unit) {
+        return configurationsRepository.getConfiguration(
+            userId = FirebaseAuth.getInstance().currentUser!!.uid,
+            beaconId = beaconId,
+            onSuccess = { configuration ->
+                onSuccess(configuration)
+            },
+            onError = { error ->
+                Log.e("BLE_TEST", "Failed to fetch configuration: $error")
+                onFailure("Failed to fetch configuration: $error")
+            }
+        )
+    }
 
     @SuppressLint("MissingPermission")
     fun addBeacon(device: BluetoothDevice, rssi: Int) {
@@ -142,7 +157,7 @@ class ConnectionsViewModel @Inject constructor(
 
             Log.d("TestingStuff", "Connected to beacon: $beaconSetup")
             //after all is successful, save the beacon to the DB
-            connectionsRepository.connectToBeacon(beaconSetup, onSuccess, onFailure)
+            beaconRepository.connectToBeacon(beaconSetup, onSuccess, onFailure)
         } catch (e: Error) {
             Log.e("BLE_TEST", "Error connecting: ${e.message}")
             onFailure("Failing to connect to beacon - Error: $e")

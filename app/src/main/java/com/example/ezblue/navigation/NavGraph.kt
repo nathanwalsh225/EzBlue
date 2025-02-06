@@ -1,11 +1,9 @@
 package com.example.ezblue.navigation
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.screens.AutomatedMessagingSetupScreen
 import com.example.ezblue.screens.BeaconConnectionScreen
@@ -13,7 +11,6 @@ import com.example.ezblue.screens.ConnectionsScreen
 import com.example.ezblue.screens.HomeScreen
 import com.example.ezblue.screens.LoginScreen
 import com.example.ezblue.screens.RegisterScreen
-import com.example.ezblue.viewmodel.ConnectionsViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 

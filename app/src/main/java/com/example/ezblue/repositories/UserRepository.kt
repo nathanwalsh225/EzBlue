@@ -39,7 +39,6 @@ class UserRepository @Inject constructor(
     }
 
 
-
     //Turns out I am not an idiot! Yay, I was able to repurpose this code to check if the user email already exists in the database before registering
     //https://firebase.google.com/docs/firestore/query-data/get-data#kotlin
     //https://stackoverflow.com/questions/71904044/how-to-retrieve-data-from-firestore-and-store-it-to-array-kotlin-android-studi

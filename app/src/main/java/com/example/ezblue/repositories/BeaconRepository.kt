@@ -1,10 +1,11 @@
 package com.example.ezblue.repositories
 
+import android.util.Log
 import com.example.ezblue.model.Beacon
 import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 
-class ConnectionsRepository @Inject constructor(
+class BeaconRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
 ) {
 
@@ -36,5 +37,19 @@ class ConnectionsRepository @Inject constructor(
             }
     }
 
+
+    fun getConnectedBeacons(userId: String, onSuccess: (List<Beacon>) -> Unit, onError: (String) -> Unit) {
+         firestore.collection(BEACON_COLLECTION)
+            .whereEqualTo("ownerId", userId)
+            .get()
+            .addOnSuccessListener { result ->
+                val beacons = result.toObjects(Beacon::class.java)
+                Log.d("BeaconRepository", "Beacons: $beacons")
+                onSuccess(beacons)
+            }
+            .addOnFailureListener {
+                onError("Failed to fetch beacons - try a restart :D")
+            }
+    }
 
 }

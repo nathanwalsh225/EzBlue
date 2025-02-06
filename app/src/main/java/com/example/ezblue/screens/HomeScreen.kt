@@ -1,5 +1,11 @@
 package com.example.ezblue.screens
 
+import android.annotation.SuppressLint
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,105 +39,75 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
-import com.example.ezblue.model.Configurations
-import com.example.ezblue.model.Visibility
 import com.example.ezblue.navigation.MainScreenWithSideBar
-import java.text.SimpleDateFormat
+import com.example.ezblue.viewmodel.BeaconViewModel
+import com.example.ezblue.viewmodel.UserViewModel
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    onLogoutClick: () -> Unit
-//    userViewModel: UserViewModel,
-//    beaconViewModel: BeaconViewModel
+    onLogoutClick: () -> Unit,
+    userViewModel: UserViewModel = hiltViewModel(),
+    beaconViewModel: BeaconViewModel = hiltViewModel()
 ) {
+    var connectedBeacons by remember { mutableStateOf<List<Beacon>>(emptyList()) }
 
-    val beacon1Configurations = listOf(
-        Configurations(
-            configId = "config1",
-            beaconId = "beacon1",
-            userId = "user1",
-            actionId = "action1",
-            parameters = mapOf("message" to "Office alert", "priority" to "High"),
-            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-01T12:00:00Z"),
-            visibility = Visibility.PUBLIC
-        )
-    )
+    val scanCallback = remember {
+        object : ScanCallback() {
+            @RequiresApi(Build.VERSION_CODES.R)
+            @SuppressLint("MissingPermission")
+            override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                val device = result?.device
+                val rssi = result?.rssi
 
-    val beacon2Configurations = listOf(
-        Configurations(
-            configId = "config2",
-            beaconId = "beacon2",
-            userId = "user1",
-            actionId = "action2",
-            parameters = mapOf("message" to "Car Alert", "speedLimit" to "50"),
-            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-11T12:00:00Z"),
-            visibility = Visibility.PRIVATE
-        )
-    )
+                beaconViewModel.addBeacon(device!!, rssi!!)
+            }
 
-    val beacon3Configurations = listOf(
-        Configurations(
-            configId = "config3",
-            beaconId = "beacon3",
-            userId = "user1",
-            actionId = "action3",
-            parameters = mapOf("message" to "Car Alert", "speedLimit" to "50"),
-            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-11T12:00:00Z"),
-            visibility = Visibility.PRIVATE
-        )
-    )
+            override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+                results?.forEach { result ->
+                    val device = result.device
+                    val rssi = result.rssi
 
-    val dummyBeaconList = listOf(
-        Beacon(
-            beaconId = "beacon1",
-            beaconName = "Office Beacon",
-            role = "Motion Detection",
-            uuid = "12345678-1234-1234-1234-123456789abc",
-            major = 1,
-            minor = 1,
-            signalStrength = -65,
-            isConnected = false,
-            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-01T12:00:00Z"),
-            ownerId = "user1",
-            lastDetected = null,
-            note = "This is a note",
-            configurations = beacon1Configurations
-        ),
-        Beacon(
-            beaconId = "beacon2",
-            beaconName = "Car Beacon",
-            role = "Automated Messaging",
-            uuid = "12345678-1234-5678-1234-123456789def",
-            major = 1,
-            minor = 2,
-            signalStrength = -70,
-            isConnected = true,
-            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-11T12:00:00Z"),
-            ownerId = "user1",
-            lastDetected = null,
-            note = null,
-            configurations = beacon2Configurations
-        ),
-        Beacon(
-            beaconId = "beacon3",
-            beaconName = "Home Beacon",
-            role = "Home Automation",
-            uuid = "87654321-4321-4321-4321-987654321abc",
-            major = 2,
-            minor = 3,
-            signalStrength = -80,
-            isConnected = false,
-            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-07-01T12:00:00Z"),
-            ownerId = "user1",
-            lastDetected = null,
-            note = "This is a note",
-            configurations = beacon3Configurations
+                    beaconViewModel.addBeacon(device, rssi)
+                }
+            }
+
+            override fun onScanFailed(error: Int) {
+                Log.d("ConnectionsViewModel", "Scan failed: $error")
+            }
+        }
+    }
+
+    LaunchedEffect(connectedBeacons) {
+        userViewModel.getConnectedBeacons(
+            onBeaconsFetched = { beacons ->
+                connectedBeacons = beacons
+            },
+            onError = { error ->
+                Log.d("HomeScreen", "Error: $error")
+            }
         )
-    )
+
+        for (beacon in connectedBeacons) {
+            Log.d("HomeScreen", "Beacon: $beacon")
+            beaconViewModel.fetchBeaconConfigurations(
+                beaconId = beacon.beaconId,
+                onSuccess = { configuration ->
+                    Log.d("HomeScreen", "Configurations: $configuration")
+                    beacon.configuration = configuration
+                },
+                onFailure = { error ->
+                    Log.d("HomeScreen", "Error: $error")
+                    //TODO Handle error
+                }
+            )
+        }
+    }
+
 
 
     MainScreenWithSideBar(
@@ -150,7 +127,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(dummyBeaconList) { beacon ->
+            items(connectedBeacons) { beacon ->
                 BeaconCard(beacon = beacon)
             }
         }
@@ -186,14 +163,12 @@ fun BeaconCard(beacon: Beacon) {
                         )
                     )
 
-                    beacon.configurations.forEach { configuration ->
-                        Text(
-                            text = configuration.visibility.name,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        )
-                    }
+//                    Text(
+//                        text = beacon.configuration?.visibility!!.name,
+//                        style = MaterialTheme.typography.bodyMedium.copy(
+//                                color = MaterialTheme.colorScheme.secondary
+//                            )
+//                    )
 
                     Spacer(modifier = Modifier.height(12.dp))
 

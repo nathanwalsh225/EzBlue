@@ -37,7 +37,7 @@ import androidx.navigation.NavController
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.navigation.MainScreenWithSideBar
-import com.example.ezblue.viewmodel.ConnectionsViewModel
+import com.example.ezblue.viewmodel.BeaconViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 
@@ -45,12 +45,12 @@ import java.text.SimpleDateFormat
 @Composable
 fun ConnectionsScreen(
     navController: NavController,
-    connectionsViewModel: ConnectionsViewModel = hiltViewModel(),
+    beaconViewModel: BeaconViewModel = hiltViewModel(),
     onLogoutClick: () -> Unit,
     onConnectClick: (Beacon) -> Unit
 ) {
     //Making this a LiveData so I can update it in the ViewModel easier
-    val scannedBeacons by connectionsViewModel.scannedBeacons.observeAsState(emptyList())
+    val scannedBeacons by beaconViewModel.scannedBeacons.observeAsState(emptyList())
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
 
@@ -68,7 +68,7 @@ fun ConnectionsScreen(
                 val device = result?.device
                 val rssi = result?.rssi
 
-                connectionsViewModel.addBeacon(device!!, rssi!!)
+                beaconViewModel.addBeacon(device!!, rssi!!)
             }
 
             override fun onBatchScanResults(results: MutableList<ScanResult>?) {
@@ -76,7 +76,7 @@ fun ConnectionsScreen(
                     val device = result.device
                     val rssi = result.rssi
 
-                    connectionsViewModel.addBeacon(device, rssi)
+                    beaconViewModel.addBeacon(device, rssi)
                 }
             }
 

@@ -61,7 +61,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.ui.theme.EzBlueTheme
-import com.example.ezblue.viewmodel.ConnectionsViewModel
+import com.example.ezblue.viewmodel.BeaconViewModel
 import com.example.ezblue.viewmodel.MessagingViewModel
 import java.util.Date
 
@@ -72,7 +72,7 @@ fun AutomatedMessagingSetupScreen(
     navController: NavController,
     beacon: Beacon,
     messagingViewModel: MessagingViewModel = hiltViewModel(),
-    connectionsViewModel: ConnectionsViewModel = hiltViewModel(),
+    beaconViewModel: BeaconViewModel = hiltViewModel(),
     onBackClicked: () -> Unit,
     onAutomatedMessagingSetupSuccess: () -> Unit
 ) {
@@ -357,7 +357,7 @@ fun AutomatedMessagingSetupScreen(
                         OutlinedButton(
                             onClick = {
                                 //Where the task will be saved
-                                connectionsViewModel.connectToBeacon(
+                                beaconViewModel.connectToBeacon(
                                     beacon = beacon,
                                     context = context,
                                     parameters = mapOf(
