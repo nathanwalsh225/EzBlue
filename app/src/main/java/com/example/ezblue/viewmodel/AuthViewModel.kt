@@ -88,7 +88,7 @@ class AuthViewModel @Inject constructor(
     }
 
 
-    private fun checkEmail(email: String, onResult: (Boolean) -> Unit) {
+    fun checkEmail(email: String, onResult: (Boolean) -> Unit) {
         firebaseAuth.fetchSignInMethodsForEmail(email)
             .addOnCompleteListener { task ->
                 val signInMethods = task.result?.signInMethods

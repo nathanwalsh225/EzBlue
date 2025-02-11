@@ -481,7 +481,7 @@ fun ContactPickerPopup(
     }
 }
 
-//TODO more testing for this and incorporate foreign number support
+//TODO more testing for this and incorporate foreign number support - https://stackoverflow.com/questions/12259347/extract-the-country-code-from-mobile-number
 //very basic function to just clean the number so something like 087 653 8986 will be +353876538986
 fun cleanNumber(number: String): String {
     return if (number.startsWith("0")) {
@@ -490,11 +490,6 @@ fun cleanNumber(number: String): String {
         number.replace(" ", "")
     }
 }
-
-fun checkPermissions(): Boolean {
-    return false
-}
-
 
 @Preview
 @Composable

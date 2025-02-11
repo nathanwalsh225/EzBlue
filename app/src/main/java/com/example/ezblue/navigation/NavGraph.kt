@@ -66,6 +66,7 @@ fun NavGraph(
             )
         }
 
+        //TODO switch the JSON to a Parcelable for better performance
         composable("connections") {
             ConnectionsScreen(
                 navController = navController,
