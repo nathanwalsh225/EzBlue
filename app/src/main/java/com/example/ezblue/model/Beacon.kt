@@ -1,8 +1,11 @@
 package com.example.ezblue.model
 
 import android.bluetooth.BluetoothDevice
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import java.util.Date
 
+@Parcelize
 data class Beacon(
     val beaconId: String = "",
     var beaconName: String = "",
@@ -20,4 +23,4 @@ data class Beacon(
     var status: BeaconStatus = BeaconStatus.OFFLINE, // RunTime only, not stored in DB
     var bluetoothDevice: BluetoothDevice? = null // Runtime only, not stored in DB
 
-)
+) : Parcelable

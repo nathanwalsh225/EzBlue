@@ -1,5 +1,6 @@
 package com.example.ezblue.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
@@ -12,7 +13,6 @@ import com.example.ezblue.screens.HomeScreen
 import com.example.ezblue.screens.LoginScreen
 import com.example.ezblue.screens.RegisterScreen
 import com.google.firebase.auth.FirebaseAuth
-import com.google.gson.Gson
 
 @Composable
 fun NavGraph(
@@ -77,21 +77,26 @@ fun NavGraph(
                     } //No need to pass viewmodel here since Hilt is dealing with it
                 },
                 onConnectClick = { beacon ->
-                    //converting the beacon to json string and passing it as an argument for ease of passing through pages
-                    navController.navigate("beaconConnectionScreen/${Gson().toJson(beacon)}") {
-                        popUpTo("beaconConnectionScreen/${Gson().toJson(beacon)}") {
-                            inclusive = true
-                        }
-                    }
+                    //Parcelable is a better option than JSON here
+                    Log.d("NavGraph", "0 beacon: $beacon")
+                    navController.currentBackStackEntry?.savedStateHandle?.set("beacon", beacon)
+                    navController.navigate("beaconConnectionScreen")
                 }
             )
-
         }
 
-        composable("beaconConnectionScreen/{beacon}") { backStackEntry ->
-            //unJsoning the beacon from the json string passed as an argument
+        composable("beaconConnectionScreen") {
+
             val beacon =
-                Gson().fromJson(backStackEntry.arguments?.getString("beacon"), Beacon::class.java)
+                navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
+
+            Log.d("NavGraph", "1 beacon: $beacon")
+
+            if (beacon == null) { //TODO this should never happen but just in case, move user back to the connections screen
+                navController.popBackStack()
+                Log.d("NavGraph", "leaving")
+                return@composable
+            }
 
             BeaconConnectionScreen(
                 navController = navController,
@@ -101,28 +106,25 @@ fun NavGraph(
                 beacon = beacon,
                 onNextClicked = { configuredBeacon ->
                     //Automated Messaging Setup Screen
-                    if(configuredBeacon.major == 2) {
-                        navController.navigate("AutomatedMessagingSetupScreen/${Gson().toJson(configuredBeacon)}") {
-                            popUpTo("AutomatedMessagingSetupScreen/${Gson().toJson(configuredBeacon)}") {
-                                inclusive = true
-                            }
-                        }
+                    if (configuredBeacon.major == 2) {
+                        navController.currentBackStackEntry?.savedStateHandle?.set("beacon", beacon)
+                        navController.navigate("AutomatedMessagingSetupScreen")
                     }
 
                 }
             )
         }
 
-        composable("AutomatedMessagingSetupScreen/{beacon}") { backStackEntry ->
+        composable("AutomatedMessagingSetupScreen") {
             val beacon =
-                Gson().fromJson(backStackEntry.arguments?.getString("beacon"), Beacon::class.java)
+                navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
 
             AutomatedMessagingSetupScreen(
                 navController = navController,
                 onBackClicked = {
                     navController.popBackStack()
                 },
-                beacon = beacon,
+                beacon = beacon!!,
                 onAutomatedMessagingSetupSuccess = {
                     //navController.popBackStack()
                 }

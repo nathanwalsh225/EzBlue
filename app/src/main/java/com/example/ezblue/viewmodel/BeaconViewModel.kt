@@ -92,10 +92,13 @@ class BeaconViewModel @Inject constructor(
     @SuppressLint("MissingPermission")
     fun connectToBeacon(beacon: Beacon, context: Context, parameters: Map<String, String>, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
 
+        Log.e("BeaconSetup", "Entered Connection")
+
         //Having to reasign the bluetoothDevice since its not being saved to the db and its being passed through the navGraph
         //as a JSON object so the bluetoothDevice is being lost as it is not a serializable object
         //this is fine for the other items that arent saved to the db because they will be updated live anyway, so for the
         //bluetoothDevice I will just have to reassign it here (no big deal really 😎)
+        //TODO review as Parcelable may have solved the issue of the bluetoothDevice being lost
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         val bluetoothDevice = bluetoothAdapter?.getRemoteDevice(beacon.beaconId)
 
@@ -106,11 +109,11 @@ class BeaconViewModel @Inject constructor(
         }
 
         try {
+
+            Log.e("BeaconSetup", "Entered Try")
             val bluetoothGatt = bluetoothDevice.connectGatt(context, false, bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE) // connect to the device, also inform the device that we are using BLE
 
             if (bluetoothGatt == null) {
-                Log.d("BLE_TEST", "bluetoothGatt is NULL Cannot connect!")
-
                 //Had an issue myself where the bluetoothGattCallback method was not being called, after ALOT of time debugging,
                 //It turns out it was a problem with my devices bluetooth cache and a simple reset of the bluetooth fixed it
                 //so in order to avoid that ive got a simple reset of the bluetooth adapter here which will reset the users bluetooth
@@ -130,6 +133,7 @@ class BeaconViewModel @Inject constructor(
                 return
             }
 
+            Log.e("BeaconSetup", "Bluetooth Okay")
             bluetoothResetAttempts = 0 // on success we will reset the attempts
             connectedGatts[beacon.beaconId] = bluetoothGatt // save the gatt to the list of connected gatts
 
@@ -159,7 +163,7 @@ class BeaconViewModel @Inject constructor(
             //after all is successful, save the beacon to the DB
             beaconRepository.connectToBeacon(beaconSetup, onSuccess, onFailure)
         } catch (e: Error) {
-            Log.e("BLE_TEST", "Error connecting: ${e.message}")
+            Log.e("BeaconSetup", "Error connecting: ${e.message}")
             onFailure("Failing to connect to beacon - Error: $e")
         }
 
@@ -189,7 +193,7 @@ class BeaconViewModel @Inject constructor(
                 }
 
                 BluetoothProfile.STATE_CONNECTING -> {
-                    Log.d("BLE_TEST", "🔄 Connecting to device: ${gatt.device.address}")
+                    Log.d("BLE_TEST", "Connecting to device: ${gatt.device.address}")
                 }
 
                 BluetoothProfile.STATE_DISCONNECTING -> {

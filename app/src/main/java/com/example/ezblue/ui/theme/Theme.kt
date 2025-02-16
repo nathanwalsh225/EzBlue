@@ -19,12 +19,6 @@ private val DarkColorScheme = darkColorScheme(
     tertiary = online
 )
 
-//private val LightColorScheme = lightColorScheme( //TODO Maybe implement Light color scheme
-//    primary = Purple40,
-//    secondary = PurpleGrey40,
-//    tertiary = Pink40
-//)
-
 @Composable
 fun EzBlueTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

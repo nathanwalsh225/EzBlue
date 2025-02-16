@@ -357,20 +357,25 @@ fun AutomatedMessagingSetupScreen(
                         OutlinedButton(
                             onClick = {
                                 //Where the task will be saved
-                                beaconViewModel.connectToBeacon(
-                                    beacon = beacon,
-                                    context = context,
-                                    parameters = mapOf(
-                                        "contactNumber" to contactNumber.value,
-                                        "message" to contactMsg
-                                    ),
-                                    onSuccess = {
-                                        //onAutomatedMessagingSetupSuccess()
-                                    },
-                                    onFailure = { error ->
-                                        Log.d("TestingStuff", "Failed to connect to beacon - ERROR: $error")
-                                    }
-                                )
+                                try {
+                                    beaconViewModel.connectToBeacon(
+                                        beacon = beacon,
+                                        context = context,
+                                        parameters = mapOf(
+                                            "contactNumber" to contactNumber.value,
+                                            "message" to contactMsg
+                                        ),
+                                        onSuccess = {
+                                            Log.d("BeaconSetup", "Connected to beacon: $beacon")
+                                            //onAutomatedMessagingSetupSuccess()
+                                        },
+                                        onFailure = { error ->
+
+                                        }
+                                    )
+                                } catch (e: Exception) {
+                                    Log.d("BeaconSetup", "Error: $e")
+                                }
                             },
                             modifier = Modifier
                                 .weight(1f)

@@ -93,9 +93,7 @@ class AuthViewModel @Inject constructor(
             .addOnCompleteListener { task ->
                 val signInMethods = task.result?.signInMethods
                 val emailExists = signInMethods.isNullOrEmpty()
-                Log.d("TestingStuff", "Email exists: $emailExists")
                 if (emailExists) {
-                    Log.d("TestingStuff", "checking db now")
                     userRepository.getUserIdByEmail( //why crash when register
                         email = email,
                         onSuccess = {
