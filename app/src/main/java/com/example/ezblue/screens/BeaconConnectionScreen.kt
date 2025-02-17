@@ -1,6 +1,7 @@
 package com.example.ezblue.screens
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -285,6 +286,8 @@ fun BeaconConnectionScreen(
                                 role = beaconRole.value
                             )
 
+
+                            Log.d("testingStuff", "Configured Beacon: $configuredBeacon")
                             //TODO IMPORTANT NEED TO GET BEACONS SAVING DATA LIKE NOTES AND NAMES ECT
                             onNextClicked(configuredBeacon)
                         },

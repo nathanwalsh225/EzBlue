@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -49,6 +50,7 @@ import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.navigation.MainScreenWithSideBar
 import com.example.ezblue.viewmodel.BeaconViewModel
+import com.example.ezblue.viewmodel.TaskViewModel
 import com.example.ezblue.viewmodel.UserViewModel
 import kotlinx.coroutines.delay
 
@@ -58,14 +60,18 @@ fun HomeScreen(
     navController: NavController,
     onLogoutClick: () -> Unit,
     userViewModel: UserViewModel = hiltViewModel(),
-    beaconViewModel: BeaconViewModel = hiltViewModel()
+    beaconViewModel: BeaconViewModel = hiltViewModel(),
+    taskViewModel: TaskViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     var connectedBeacons by remember { mutableStateOf<List<Beacon>>(emptyList()) }
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
     val rssiReadings = mutableListOf<Int>()
+    var taskCounter = 0
 
 
+    //Not working as expected
     fun smoothRssi(rssi: Int): Int {
         if (rssiReadings.size >= 5) rssiReadings.removeAt(0) //Keep only the last 5 readings not really a need for more then that for the average
         rssiReadings.add(rssi)
@@ -74,6 +80,7 @@ fun HomeScreen(
     }
 
 
+    //Also not working as expected :(
     @SuppressLint("MissingPermission")
     fun setScanFrequency(rssi: Int, scanCallback: ScanCallback) {
         val scanSettings = when {
@@ -93,6 +100,56 @@ fun HomeScreen(
         bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
     }
 
+    //when performBeaconTask is called, much like in navGraph, the major of the beacon will be used to determine the task to be performed
+    fun performBeaconTask(beacon: Beacon) {
+        when (beacon.major) {
+            1 -> {
+
+            }
+
+            2 -> { //Automated Messaging
+                Log.d("TestingStuff", "Task Counter $taskCounter")
+
+                //Task Counter is a placerholder at the moment so I dont spam messages until I get logs going
+                if (taskCounter == 1) return //testing Only send one message
+                Log.d("TestingStuff", "Task Counter $taskCounter")
+
+                try {
+                    Log.d("TestingStuff", "Performing task for beacon ${beacon.beaconName}")
+                    Log.d("TestingStuff", "Configurations ${beacon.configuration}")
+                    taskCounter++
+
+                    taskViewModel.sendMessage(
+                        number = beacon.configuration!!.parameters["contactNumber"] as String,
+                        message = beacon.configuration!!.parameters["message"] as String,
+                        context = context,
+                        onSuccess = {
+                            Log.d("HomeScreen", "Message sent successfully")
+                        }
+                    )
+                } catch (e: Exception) {
+                    Log.d("TestingStuff", "Error sending message: ${e.message}")
+                }
+            }
+
+            3 -> {
+
+            }
+
+            4 -> {
+
+            }
+
+            5 -> {
+
+            }
+
+            else -> {
+                Log.d("HomeScreen", "Beacon ${beacon.beaconName} is not a recognized beacon")
+            }
+        }
+    }
+
     val scanCallback = object : ScanCallback() {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
@@ -100,18 +157,42 @@ fun HomeScreen(
                 val device = result.device
                 val rssi = result.rssi
 
-                Log.d("HomeScreen", "Device: $device, RSSI: $rssi")
+                val smoothedRssi = smoothRssi(rssi) //attempting to round the RSSI every few seconds to reduce the sparatic RSSI jumps
 
-                val smoothedRssi = smoothRssi(rssi)
+                setScanFrequency(smoothedRssi, this) // attempting to set the scan frequency - helps with power consumption (nearer beacons cause scans more often)
+                connectedBeacons = connectedBeacons.map { beacon ->
+                    if (beacon.beaconId == device.address) { //mapping the connected beacons to the scanned beacons to compare mac addresses
 
-                setScanFrequency(smoothedRssi, this)
+                        if (beacon.configuration != null) { //Prevent null crashes, dont do any task until configurations have been loaded
+                            performBeaconTask(beacon) //perform the task for the beacon
+                        }
+
+                        beacon.copy( //Update the Rssi and status of the beacon per scan
+                            signalStrength = smoothedRssi,
+                            status = if (smoothedRssi > -90) BeaconStatus.ONLINE else BeaconStatus.OFFLINE
+                        )
+                    } else {
+                        beacon //placeholder, dont think Ill need anything here
+                    }
+                }
             }
         }
 
-        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+        override fun onBatchScanResults(results: MutableList<ScanResult>?) { //Review to see is this even needed
             results?.forEach { result ->
                 val smoothedRssi = smoothRssi(result.rssi)
                 setScanFrequency(smoothedRssi, this)
+
+                connectedBeacons = connectedBeacons.map { beacon ->
+                    if (beacon.bluetoothDevice?.address == result.device.address) {
+                        beacon.copy(
+                            signalStrength = smoothedRssi,
+                            status = if (smoothedRssi > -90) BeaconStatus.ONLINE else BeaconStatus.OFFLINE
+                        )
+                    } else {
+                        beacon
+                    }
+                }
             }
         }
 
@@ -120,53 +201,49 @@ fun HomeScreen(
         }
     }
 
-
     LaunchedEffect(Unit) {
-        while (true) {
-            Log.d("HomeScreen", "Scanning")
-
-            //start the scan in a balanced state to check for beacons
-            val scanSettings =
-                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
-
-            //begin the scan at homescreen
-            bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
-
-            delay(10000) //scan for 10 seconds
-
-            bluetoothLeScanner?.stopScan(scanCallback) //stop the scan
-
-            delay(5000) //wait 5 seconds before starting the scan again
-        }
-    }
-
-
-    LaunchedEffect(connectedBeacons) {
-        //TODO review for performance, ensure multiple scans are not running at the same time
-        userViewModel.getConnectedBeacons( //#1 CHECK WHAT THIS RETURNS, COMPARE IT AGAINST THE MAC ADDRESS?
+        //TODO fix as it requires screen recomposition for the tasks to work
+        userViewModel.getConnectedBeacons(
             onBeaconsFetched = { beacons ->
-                connectedBeacons = beacons
-                Log.d("HomeScreen", "Connected Beacons: $beacons")
+                connectedBeacons = beacons.toMutableList() //Temporary fix for the recomposition issue with the configuration
+
+                for (beacon in connectedBeacons) { //for each beacon fetch the configuration for the tasks
+                    beaconViewModel.fetchBeaconConfigurations(
+                        beaconId = beacon.beaconId,
+                        onSuccess = { configuration ->
+                            beacon.configuration = configuration //assign the configuration to the beacon
+                            connectedBeacons = connectedBeacons.toList() //then refresh the list to trigger recomposition (not working as expected)
+                            Log.d("TestingStuff", "Connected Beacons: $connectedBeacons")
+                        },
+                        onFailure = { error ->
+                            Log.d("HomeScreen", "Error: $error")
+                        }
+                    )
+                }
             },
             onError = { error ->
                 Log.d("HomeScreen", "Error: $error")
             }
         )
 
-        for (beacon in connectedBeacons) {
-            Log.d("HomeScreen", "Beacon: $beacon")
-            beaconViewModel.fetchBeaconConfigurations(
-                beaconId = beacon.beaconId,
-                onSuccess = { configuration ->
-                    //#3 MAYBE HERE IDK BUT UPDATE THE BEACON LIVE
-                    Log.d("HomeScreen", "Configurations: $configuration")
-                    beacon.configuration = configuration
-                },
-                onFailure = { error ->
-                    Log.d("HomeScreen", "Error: $error")
-                    //TODO Handle error
-                }
-            )
+        Log.d("TestingStuff", "Connected Beacons: $connectedBeacons")
+
+
+        while (true) {
+            Log.d("HomeScreen", "Scanning")
+            //start the scan in a balanced state to check for beacons
+            val scanSettings =
+                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
+
+            //begin the scan at home screen
+            bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
+            Log.d("TestingStuff", "Scanning")
+            delay(10000) //scan for 10 seconds
+
+            bluetoothLeScanner?.stopScan(scanCallback) //stop the scan
+            Log.d("TestingStuff", "Stopping Scan")
+
+            delay(5000) //wait 5 seconds before starting the scan again
         }
     }
 
@@ -201,6 +278,14 @@ fun HomeScreen(
 fun BeaconCard(beacon: Beacon) {
 
     var isExpanded by remember { mutableStateOf(false) }
+
+
+    //TODO get images
+//    val signalIcon = when {
+//        beacon.signalStrength > -40 -> R.drawable.signal_strong
+//        beacon.signalStrength > -70 ->  R.drawable.signal_moderate
+//        else ->  R.drawable.signal_weak
+//    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),

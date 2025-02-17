@@ -95,7 +95,6 @@ fun NavGraph(
             if (beacon == null) { //TODO this should never happen but just in case, move user back to the connections screen
                 navController.popBackStack()
                 Log.d("NavGraph", "leaving")
-                return@composable
             }
 
             BeaconConnectionScreen(
@@ -103,11 +102,11 @@ fun NavGraph(
                 onBackClicked = {
                     navController.popBackStack()
                 },
-                beacon = beacon,
+                beacon = beacon!!,
                 onNextClicked = { configuredBeacon ->
                     //Automated Messaging Setup Screen
                     if (configuredBeacon.major == 2) {
-                        navController.currentBackStackEntry?.savedStateHandle?.set("beacon", beacon)
+                        navController.currentBackStackEntry?.savedStateHandle?.set("beacon", configuredBeacon)
                         navController.navigate("AutomatedMessagingSetupScreen")
                     }
 
@@ -118,6 +117,8 @@ fun NavGraph(
         composable("AutomatedMessagingSetupScreen") {
             val beacon =
                 navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
+
+            Log.d("NavGraph", "2 beacon: $beacon")
 
             AutomatedMessagingSetupScreen(
                 navController = navController,

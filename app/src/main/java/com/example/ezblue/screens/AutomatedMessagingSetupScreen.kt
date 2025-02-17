@@ -62,7 +62,7 @@ import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.ui.theme.EzBlueTheme
 import com.example.ezblue.viewmodel.BeaconViewModel
-import com.example.ezblue.viewmodel.MessagingViewModel
+import com.example.ezblue.viewmodel.TaskViewModel
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,7 +71,7 @@ import java.util.Date
 fun AutomatedMessagingSetupScreen(
     navController: NavController,
     beacon: Beacon,
-    messagingViewModel: MessagingViewModel = hiltViewModel(),
+    taskViewModel: TaskViewModel = hiltViewModel(),
     beaconViewModel: BeaconViewModel = hiltViewModel(),
     onBackClicked: () -> Unit,
     onAutomatedMessagingSetupSuccess: () -> Unit
@@ -303,7 +303,7 @@ fun AutomatedMessagingSetupScreen(
 
                     OutlinedButton(
                         onClick = {
-                            messagingViewModel.sendMessage(
+                            taskViewModel.sendMessage(
                                 contactNumber.value,
                                 contactMsg,
                                 onSuccess = {
@@ -366,7 +366,7 @@ fun AutomatedMessagingSetupScreen(
                                             "message" to contactMsg
                                         ),
                                         onSuccess = {
-                                            Log.d("BeaconSetup", "Connected to beacon: $beacon")
+                                            Log.d("testingStuff", "Connected to beacon: $beacon")
                                             //onAutomatedMessagingSetupSuccess()
                                         },
                                         onFailure = { error ->
@@ -500,7 +500,7 @@ fun cleanNumber(number: String): String {
 @Composable
 fun AutomatedMessagingSetupScreenPreview() {
     val navController = rememberNavController()
-    val mockViewModel = MessagingViewModel()
+    val mockViewModel = TaskViewModel()
 
     EzBlueTheme {
         AutomatedMessagingSetupScreen(
@@ -520,7 +520,7 @@ fun AutomatedMessagingSetupScreenPreview() {
                 note = null,
                 status = BeaconStatus.AVAILABLE
             ),
-            messagingViewModel = mockViewModel,
+            taskViewModel = mockViewModel,
             onBackClicked = {},
             onAutomatedMessagingSetupSuccess = {}
         )

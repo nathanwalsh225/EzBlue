@@ -19,7 +19,7 @@ class BeaconRepository @Inject constructor(
                 mapOf(
                     "beaconId" to beacon.beaconId,
                     "beaconName" to beacon.beaconName,
-                    "beaconNote" to beacon.note,
+                    "beaconNote" to beacon.note, //TODO why null
                     "createdAt" to beacon.createdAt,
                     "lastDetected" to beacon.lastDetected,
                     "major" to beacon.major,

@@ -11,13 +11,17 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class MessagingViewModel @Inject constructor(
+class TaskViewModel @Inject constructor(
     //private val connectionsRepository: ConnectionsRepository
 ) : ViewModel() {
 
     private val smsManager = SmsManager.getDefault() ?: throw IllegalStateException("SmsManager not available")
 
     fun sendMessage(number: String, message: String, context: Context, onSuccess : () -> Unit) {
+
+        Log.d("TestingStuff", "Sending message to $number: $message")
+
+
         val sentIntent = PendingIntent.getBroadcast(
             context,
             0,
