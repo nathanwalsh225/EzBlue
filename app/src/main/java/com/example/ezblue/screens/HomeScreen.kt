@@ -3,14 +3,10 @@ package com.example.ezblue.screens
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,7 +66,6 @@ fun HomeScreen(
     val rssiReadings = mutableListOf<Int>()
     var taskCounter = 0
 
-
     //Not working as expected
     fun smoothRssi(rssi: Int): Int {
         if (rssiReadings.size >= 5) rssiReadings.removeAt(0) //Keep only the last 5 readings not really a need for more then that for the average
@@ -78,7 +73,6 @@ fun HomeScreen(
         return rssiReadings.average()
             .toInt() //returning the average RSSI reading to prevent sudden jumps in the RSSI value
     }
-
 
     //Also not working as expected :(
     @SuppressLint("MissingPermission")
@@ -305,7 +299,7 @@ fun BeaconCard(beacon: Beacon) {
                 Column {
                     Text(
                         text = beacon.beaconName,
-                        style = MaterialTheme.typography.headlineMedium.copy(
+                        style = MaterialTheme.typography.headlineSmall.copy(
                             color = MaterialTheme.colorScheme.secondary
                         )
                     )
@@ -321,7 +315,7 @@ fun BeaconCard(beacon: Beacon) {
 
                     Column {
                         Text(
-                            text = "Strength: ${beacon.signalStrength} dBm",
+                            text = if (beacon.signalStrength >= -90) "Strength: ${beacon.signalStrength} dBm" else "Beacon Unavailable",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.secondary
                             )
@@ -354,7 +348,7 @@ fun BeaconCard(beacon: Beacon) {
                 ) {
                     Column {
                         Text(
-                            text = "Note: ${beacon.note}",
+                            text = "Note: ${beacon.beaconNote}",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.secondary
                             )

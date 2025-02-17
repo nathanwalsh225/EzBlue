@@ -98,7 +98,7 @@ fun ConnectionsScreen(
             createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-11T12:00:00Z"),
             ownerId = "user1",
             lastDetected = null,
-            note = null
+            beaconNote = null
         )
 
 

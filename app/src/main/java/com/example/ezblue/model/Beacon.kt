@@ -10,7 +10,7 @@ data class Beacon(
     val beaconId: String = "",
     var beaconName: String = "",
     val role: String = "",
-    val note: String? = null,
+    val beaconNote: String? = null,
     val uuid: String = "",
     val major: Int = 0,
     val minor: Int = 0,

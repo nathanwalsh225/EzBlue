@@ -27,7 +27,7 @@ class UserRepository @Inject constructor(
                     "lastName" to lastName,
                     "password" to hashedPassword,
                     "createdAt" to SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Date()),
-                    "updatedAt" to  SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Date())
+                    "updatedAt" to SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Date())
                 )
             )
             .addOnSuccessListener {

@@ -226,7 +226,7 @@ fun BeaconConnectionScreen(
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                Text(
+                Text( //TODO implement min max
                     text = "Max 100 characters",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -236,9 +236,9 @@ fun BeaconConnectionScreen(
                 )
 
                 OutlinedTextField(
-                    value = setBeaconNotePlaceholder(beaconTask.intValue),
+                    value = beaconNote.value,
                     onValueChange = { beaconNote.value = it },
-                    placeholder = { Text("Leave a short note to distinguish your beacon...") },
+                    placeholder = { if (beaconTask.intValue == 0) Text("Leave a short note to distinguish your beacon...") else Text(setBeaconNotePlaceholder(beaconTask.intValue)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
@@ -281,7 +281,7 @@ fun BeaconConnectionScreen(
                         onClick = {
                             val configuredBeacon = beacon.copy(
                                 beaconName = beaconName.value,
-                                note = if (beaconNote.value.equals("")) setBeaconNotePlaceholder(beaconTask.intValue) else beaconNote.value,
+                                beaconNote = if (beaconNote.value.equals("")) setBeaconNotePlaceholder(beaconTask.intValue) else beaconNote.value,
                                 major = beaconTask.intValue,
                                 role = beaconRole.value
                             )

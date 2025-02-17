@@ -217,7 +217,7 @@ fun AutomatedMessagingSetupScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(vertical = 8.dp)
-                                .height(350.dp),
+                                .height(250.dp),
                             colors = TextFieldDefaults.outlinedTextFieldColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 focusedTextColor = MaterialTheme.colorScheme.secondary,
@@ -517,7 +517,7 @@ fun AutomatedMessagingSetupScreenPreview() {
                 ownerId = "Unknown",
                 signalStrength = 32,
                 isConnected = false,
-                note = null,
+                beaconNote = null,
                 status = BeaconStatus.AVAILABLE
             ),
             taskViewModel = mockViewModel,

@@ -2,6 +2,7 @@ package com.example.ezblue.navigation
 
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -66,7 +67,6 @@ fun NavGraph(
             )
         }
 
-        //TODO switch the JSON to a Parcelable for better performance
         composable("connections") {
             ConnectionsScreen(
                 navController = navController,
@@ -92,15 +92,20 @@ fun NavGraph(
 
             Log.d("NavGraph", "1 beacon: $beacon")
 
-            if (beacon == null) { //TODO this should never happen but just in case, move user back to the connections screen
-                navController.popBackStack()
-                Log.d("NavGraph", "leaving")
+            LaunchedEffect(Unit) {
+                if (beacon == null) {
+                    navController.navigate("connections") {
+                        popUpTo("beaconConnectionScreen") { inclusive = true }
+                    }
+                }
             }
 
             BeaconConnectionScreen(
                 navController = navController,
                 onBackClicked = {
-                    navController.popBackStack()
+                    navController.navigate("connections") {
+                        popUpTo("beaconConnectionScreen") { inclusive = true }
+                    }
                 },
                 beacon = beacon!!,
                 onNextClicked = { configuredBeacon ->

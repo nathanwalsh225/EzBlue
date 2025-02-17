@@ -78,7 +78,7 @@ class BeaconViewModel @Inject constructor(
                 ownerId = "Unknown",
                 signalStrength = rssi,
                 isConnected = false,
-                note = null,
+                beaconNote = null,
                 status = BeaconStatus.AVAILABLE,
                 bluetoothDevice = device
             )
