@@ -1,12 +1,16 @@
 package com.example.ezblue.screens
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,7 +50,9 @@ import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.navigation.MainScreenWithSideBar
 import com.example.ezblue.viewmodel.BeaconViewModel
 import com.example.ezblue.viewmodel.UserViewModel
+import kotlinx.coroutines.delay
 
+@SuppressLint("MissingPermission")
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -55,37 +61,92 @@ fun HomeScreen(
     beaconViewModel: BeaconViewModel = hiltViewModel()
 ) {
     var connectedBeacons by remember { mutableStateOf<List<Beacon>>(emptyList()) }
+    val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+    val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
+    val rssiReadings = mutableListOf<Int>()
 
-    val scanCallback = remember {
-        object : ScanCallback() {
-            @RequiresApi(Build.VERSION_CODES.R)
-            @SuppressLint("MissingPermission")
-            override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                val device = result?.device
-                val rssi = result?.rssi
 
-                beaconViewModel.addBeacon(device!!, rssi!!)
+    fun smoothRssi(rssi: Int): Int {
+        if (rssiReadings.size >= 5) rssiReadings.removeAt(0) //Keep only the last 5 readings not really a need for more then that for the average
+        rssiReadings.add(rssi)
+        return rssiReadings.average()
+            .toInt() //returning the average RSSI reading to prevent sudden jumps in the RSSI value
+    }
+
+
+    @SuppressLint("MissingPermission")
+    fun setScanFrequency(rssi: Int, scanCallback: ScanCallback) {
+        val scanSettings = when {
+            rssi > -60 -> { //closer in range, scan more often
+                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
             }
 
-            override fun onBatchScanResults(results: MutableList<ScanResult>?) {
-                results?.forEach { result ->
-                    val device = result.device
-                    val rssi = result.rssi
-
-                    beaconViewModel.addBeacon(device, rssi)
-                }
+            rssi in -80..-60 -> { //bit further away so scan less
+                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
             }
 
-            override fun onScanFailed(error: Int) {
-                Log.d("ConnectionsViewModel", "Scan failed: $error")
+            else -> { //scan even less for reduced power consumption
+                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
             }
+        }
+        //TODO implement filter, only scan for regonized devices *REVIEW*
+        bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
+    }
+
+    val scanCallback = object : ScanCallback() {
+        @SuppressLint("MissingPermission")
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            result?.let {
+                val device = result.device
+                val rssi = result.rssi
+
+                Log.d("HomeScreen", "Device: $device, RSSI: $rssi")
+
+                val smoothedRssi = smoothRssi(rssi)
+
+                setScanFrequency(smoothedRssi, this)
+            }
+        }
+
+        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+            results?.forEach { result ->
+                val smoothedRssi = smoothRssi(result.rssi)
+                setScanFrequency(smoothedRssi, this)
+            }
+        }
+
+        override fun onScanFailed(error: Int) {
+            Log.d("ConnectionsViewModel", "Scan failed: $error")
         }
     }
 
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            Log.d("HomeScreen", "Scanning")
+
+            //start the scan in a balanced state to check for beacons
+            val scanSettings =
+                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
+
+            //begin the scan at homescreen
+            bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
+
+            delay(10000) //scan for 10 seconds
+
+            bluetoothLeScanner?.stopScan(scanCallback) //stop the scan
+
+            delay(5000) //wait 5 seconds before starting the scan again
+        }
+    }
+
+
     LaunchedEffect(connectedBeacons) {
-        userViewModel.getConnectedBeacons(
+        //TODO review for performance, ensure multiple scans are not running at the same time
+        userViewModel.getConnectedBeacons( //#1 CHECK WHAT THIS RETURNS, COMPARE IT AGAINST THE MAC ADDRESS?
             onBeaconsFetched = { beacons ->
                 connectedBeacons = beacons
+                Log.d("HomeScreen", "Connected Beacons: $beacons")
             },
             onError = { error ->
                 Log.d("HomeScreen", "Error: $error")
@@ -97,6 +158,7 @@ fun HomeScreen(
             beaconViewModel.fetchBeaconConfigurations(
                 beaconId = beacon.beaconId,
                 onSuccess = { configuration ->
+                    //#3 MAYBE HERE IDK BUT UPDATE THE BEACON LIVE
                     Log.d("HomeScreen", "Configurations: $configuration")
                     beacon.configuration = configuration
                 },
@@ -220,7 +282,7 @@ fun BeaconCard(beacon: Beacon) {
                         Text(
                             text = "${beacon.status}",
                             style = MaterialTheme.typography.bodyMedium.copy(
-                              if (beacon.status == BeaconStatus.ONLINE) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+                                if (beacon.status == BeaconStatus.ONLINE) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
                             )
                         )
 
@@ -228,8 +290,8 @@ fun BeaconCard(beacon: Beacon) {
 
                         Row(
                             modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                                .fillMaxWidth()
+                                .padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.Bottom
                         ) {
