@@ -188,6 +188,7 @@ fun AutomatedMessagingSetupScreen(
                         if (permissionGranted.value) {
                             ContactPickerPopup(context, contactName, contactNumber)
                         } else {
+
                             //this is where the code for just entering a number will go
                             //TODO allow users to enter numbers
                         }
@@ -304,12 +305,15 @@ fun AutomatedMessagingSetupScreen(
                     OutlinedButton(
                         onClick = {
                             taskViewModel.sendMessage(
-                                contactNumber.value,
-                                contactMsg,
+                                beacon = beacon,
                                 onSuccess = {
                                     Toast.makeText(context, "Message Sent", Toast.LENGTH_LONG)
                                         .show()
                                     //onAutomatedMessagingSetupSuccess()
+                                },
+                                onError = {
+                                    Toast.makeText(context, "Error sending message", Toast.LENGTH_LONG)
+                                        .show()
                                 },
                                 context = context
                             )

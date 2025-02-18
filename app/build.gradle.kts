@@ -5,6 +5,10 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
     id("kotlin-parcelize")
+
+    //Room
+    id("com.google.devtools.ksp")
+    alias(libs.plugins.room)
 }
 
 android {
@@ -51,6 +55,18 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+//    ksp {
+//        arg("room.schemaLocation", "$projectDir/schemas")
+//    }
+
+
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
+
+
+
 }
 
 dependencies {
@@ -91,6 +107,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(kotlin("script-runtime"))
+
+    //Room
+//    implementation(libs.room.runtime)
+//    implementation(libs.room.ktx)
+//    annotationProcessor(libs.room.compiler)
+    implementation("androidx.room:room-runtime:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
 }
 
 kapt {

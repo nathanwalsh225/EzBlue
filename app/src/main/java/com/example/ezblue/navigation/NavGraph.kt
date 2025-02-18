@@ -3,10 +3,12 @@ package com.example.ezblue.navigation
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.example.ezblue.model.Beacon
+import com.example.ezblue.roomdb.DatabaseProvider
 import com.example.ezblue.screens.AutomatedMessagingSetupScreen
 import com.example.ezblue.screens.BeaconConnectionScreen
 import com.example.ezblue.screens.ConnectionsScreen
@@ -19,6 +21,8 @@ import com.google.firebase.auth.FirebaseAuth
 fun NavGraph(
     navController: NavHostController
 ) {
+    val context = LocalContext.current
+    val database = DatabaseProvider.getRoomDatabase(context)
 
     NavHost(
         navController = navController,

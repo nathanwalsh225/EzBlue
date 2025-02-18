@@ -7,7 +7,6 @@ import android.content.Intent
 import android.telephony.SmsManager
 import android.util.Log
 
-//TODO DELETE/REFACTOR AFTER TESTING
 class SmsSentReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (resultCode) {

@@ -56,11 +56,10 @@ fun HomeScreen(
     navController: NavController,
     onLogoutClick: () -> Unit,
     userViewModel: UserViewModel = hiltViewModel(),
-    beaconViewModel: BeaconViewModel = hiltViewModel(),
     taskViewModel: TaskViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    var connectedBeacons by remember { mutableStateOf<List<Beacon>>(emptyList()) }
+    var connectedBeacons by userViewModel.connectedBeacons //Beacons connected to the user are being gathered in the userViewModel
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
     val rssiReadings = mutableListOf<Int>()
@@ -102,23 +101,22 @@ fun HomeScreen(
             }
 
             2 -> { //Automated Messaging
-                Log.d("TestingStuff", "Task Counter $taskCounter")
-
-                //Task Counter is a placerholder at the moment so I dont spam messages until I get logs going
+                //Task Counter is a placeholder at the moment so I dont spam messages until I get logs going
                 if (taskCounter == 1) return //testing Only send one message
-                Log.d("TestingStuff", "Task Counter $taskCounter")
 
                 try {
-                    Log.d("TestingStuff", "Performing task for beacon ${beacon.beaconName}")
                     Log.d("TestingStuff", "Configurations ${beacon.configuration}")
                     taskCounter++
 
                     taskViewModel.sendMessage(
-                        number = beacon.configuration!!.parameters["contactNumber"] as String,
-                        message = beacon.configuration!!.parameters["message"] as String,
+                        beacon = beacon,
                         context = context,
                         onSuccess = {
                             Log.d("HomeScreen", "Message sent successfully")
+
+                        },
+                        onError = {
+                            Log.d("HomeScreen", "Message not sent")
                         }
                     )
                 } catch (e: Exception) {
@@ -151,13 +149,18 @@ fun HomeScreen(
                 val device = result.device
                 val rssi = result.rssi
 
-                val smoothedRssi = smoothRssi(rssi) //attempting to round the RSSI every few seconds to reduce the sparatic RSSI jumps
+                val smoothedRssi =
+                    smoothRssi(rssi) //attempting to round the RSSI every few seconds to reduce the sparatic RSSI jumps
 
-                setScanFrequency(smoothedRssi, this) // attempting to set the scan frequency - helps with power consumption (nearer beacons cause scans more often)
+                setScanFrequency(
+                    smoothedRssi,
+                    this
+                ) // attempting to set the scan frequency - helps with power consumption (nearer beacons cause scans more often)
                 connectedBeacons = connectedBeacons.map { beacon ->
                     if (beacon.beaconId == device.address) { //mapping the connected beacons to the scanned beacons to compare mac addresses
 
                         if (beacon.configuration != null) { //Prevent null crashes, dont do any task until configurations have been loaded
+                            Log.d("TestingStuff", "Performing task for beacon ${beacon.beaconName}")
                             performBeaconTask(beacon) //perform the task for the beacon
                         }
 
@@ -196,32 +199,10 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
-        //TODO fix as it requires screen recomposition for the tasks to work
-        userViewModel.getConnectedBeacons(
-            onBeaconsFetched = { beacons ->
-                connectedBeacons = beacons.toMutableList() //Temporary fix for the recomposition issue with the configuration
-
-                for (beacon in connectedBeacons) { //for each beacon fetch the configuration for the tasks
-                    beaconViewModel.fetchBeaconConfigurations(
-                        beaconId = beacon.beaconId,
-                        onSuccess = { configuration ->
-                            beacon.configuration = configuration //assign the configuration to the beacon
-                            connectedBeacons = connectedBeacons.toList() //then refresh the list to trigger recomposition (not working as expected)
-                            Log.d("TestingStuff", "Connected Beacons: $connectedBeacons")
-                        },
-                        onFailure = { error ->
-                            Log.d("HomeScreen", "Error: $error")
-                        }
-                    )
-                }
-            },
-            onError = { error ->
-                Log.d("HomeScreen", "Error: $error")
-            }
-        )
-
-        Log.d("TestingStuff", "Connected Beacons: $connectedBeacons")
-
+        //Previous version was causing issues with getting the configurations so I moved the logic to the viewmodel, honestly I dont know why I was trying
+        //to do it here in the first place, it was just one of those days
+        //fetching the users beacons and configurations Mostly code taken from old project StudyPath
+        userViewModel.fetchBeaconsAndConfigurations()
 
         while (true) {
             Log.d("HomeScreen", "Scanning")
@@ -252,19 +233,44 @@ fun HomeScreen(
         onLogoutClick = onLogoutClick
     ) {
         //HomeScreenContent(userViewModel = userViewModel, beaconViewModel = beaconViewModel)
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            items(connectedBeacons) { beacon ->
-                BeaconCard(beacon = beacon)
+//
+//        if (connectedBeacons == null) {
+//            Box (
+//                modifier = Modifier.fillMaxSize(),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                CircularProgressIndicator(
+//                    modifier = Modifier.width(25.dp),
+//                    color = MaterialTheme.colorScheme.primary,
+//                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+//                )
+//            }
+//        } else
+        if (connectedBeacons.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No Beacons Connected",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                items(connectedBeacons) { beacon ->
+                    BeaconCard(beacon = beacon)
+                }
             }
         }
-
     }
 }
 
@@ -375,7 +381,7 @@ fun BeaconCard(beacon: Beacon) {
                             verticalAlignment = Alignment.Bottom
                         ) {
                             Button(
-                                onClick = { /*TODO*/ },
+                                onClick = { /*//TODO*/ },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
                             ) {
                                 Text(
@@ -385,7 +391,7 @@ fun BeaconCard(beacon: Beacon) {
                             }
 
                             Button(
-                                onClick = { /*TODO*/ },
+                                onClick = { /*//TODO*/ },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
                             ) {
                                 Text(

@@ -285,10 +285,7 @@ fun BeaconConnectionScreen(
                                 major = beaconTask.intValue,
                                 role = beaconRole.value
                             )
-
-
                             Log.d("testingStuff", "Configured Beacon: $configuredBeacon")
-                            //TODO IMPORTANT NEED TO GET BEACONS SAVING DATA LIKE NOTES AND NAMES ECT
                             onNextClicked(configuredBeacon)
                         },
                         modifier = Modifier
