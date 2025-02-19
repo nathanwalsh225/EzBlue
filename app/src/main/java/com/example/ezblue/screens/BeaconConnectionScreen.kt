@@ -285,7 +285,7 @@ fun BeaconConnectionScreen(
                                 major = beaconTask.intValue,
                                 role = beaconRole.value
                             )
-                            Log.d("testingStuff", "Configured Beacon: $configuredBeacon")
+
                             onNextClicked(configuredBeacon)
                         },
                         modifier = Modifier

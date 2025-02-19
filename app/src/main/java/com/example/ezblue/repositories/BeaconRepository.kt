@@ -44,7 +44,6 @@ class BeaconRepository @Inject constructor(
             .get()
             .addOnSuccessListener { result ->
                 val beacons = result.toObjects(Beacon::class.java)
-                Log.d("BeaconRepository", "Beacons: $beacons")
                 onSuccess(beacons)
             }
             .addOnFailureListener {

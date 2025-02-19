@@ -370,7 +370,6 @@ fun AutomatedMessagingSetupScreen(
                                             "message" to contactMsg
                                         ),
                                         onSuccess = {
-                                            Log.d("testingStuff", "Connected to beacon: $beacon")
                                             //onAutomatedMessagingSetupSuccess()
                                         },
                                         onFailure = { error ->
@@ -378,7 +377,6 @@ fun AutomatedMessagingSetupScreen(
                                         }
                                     )
                                 } catch (e: Exception) {
-                                    Log.d("BeaconSetup", "Error: $e")
                                 }
                             },
                             modifier = Modifier

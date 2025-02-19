@@ -25,7 +25,6 @@ fun BottomNavigationBar(
     currentRoute: String
 ) {
 
-    Log.d("BottomNavigationBar", "currentRoute: $currentRoute")
 
     Row(
         modifier = Modifier.fillMaxWidth(),

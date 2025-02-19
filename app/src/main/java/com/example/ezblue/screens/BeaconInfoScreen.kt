@@ -96,6 +96,7 @@ fun BeaconInfoScreen(
     val beaconRssi = remember { mutableStateListOf<Float>() }
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
+    val scanRecords = mutableListOf<Int>()
 
     val scanCallback = object : ScanCallback() {
         @RequiresApi(35)
@@ -105,14 +106,16 @@ fun BeaconInfoScreen(
                 val device = result.device
                 val rssi = result.rssi
 
-                beaconRssi.add(rssi.toFloat())
-                Log.d("BeaconInfoScreen", "Device: $device RSSI: $rssi")
+                scanRecords.add(rssi)
 
-                if (beaconRssi.size > 100) {
-                    beaconRssi.removeFirst() // Remove the oldest value to keep a rolling window
+                if (scanRecords.size > 5) {
+                    beaconRssi.add(scanRecords.average().toFloat())
+                    scanRecords.clear()
+
                 }
             }
         }
+
 
         override fun onScanFailed(error: Int) {
             Log.d("BeaconInfoScreen", "Scan failed: $error")
@@ -121,12 +124,12 @@ fun BeaconInfoScreen(
 
     LaunchedEffect(Unit) {
         beaconViewModel.fetchBeaconLogs(beacon.beaconId, activityLogsDao)
-        Log.d("BeaconInfoScreen", "Entered Launched Effect")
+
 
         while (true) {
             Log.d("BeaconInfoScreen", "Scanning")
             val scanSettings =
-                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
+                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
 
             val targetAddress = beacon.beaconId
 
@@ -145,7 +148,7 @@ fun BeaconInfoScreen(
             Log.d("BeaconInfoScreen", "Stopping Scan")
             Log.d("BeaconInfoScreen", "RSSI List: $beaconRssi")
 
-            delay(5000) //wait 5 seconds before starting the scan again
+            delay(1500)
         }
     }
 
@@ -239,10 +242,27 @@ fun BeaconInfoScreen(
                     onClick = { isExpanded = !isExpanded },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.secondary)
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    )
                 ) {
                     Text(
                         text = if (isExpanded) "Hide Logs" else "Show Logs",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            item {
+                Button(
+                    onClick = { onBackClicked() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text(
+                        text = "Back",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(16.dp)
                     )
@@ -252,6 +272,7 @@ fun BeaconInfoScreen(
     }
 }
 
+//Got the code for this from the github library -> https://github.com/codeandtheory/YCharts
 @Composable
 fun ConnectivityGraph(rssiValues: List<Float>) {
     if (rssiValues.isEmpty()) {
@@ -259,26 +280,27 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
         return
     }
 
-    // Convert RSSI values to Points (X=index, Y=RSSI)
+    // Converting the RSSI values to Points for the graph
     val pointsData = rssiValues.mapIndexed { index, value ->
         Point(index.toFloat(), value)
     }
 
     // X-Axis configuration
     val xAxisData = AxisData.Builder()
-        .axisStepSize(30.dp)
+        .axisStepSize(40.dp) //distance between the x-axis labels
         .steps(pointsData.size - 1)
-        .labelData { i -> pointsData[i].x.toInt().toString() }
+        .labelData { i -> "${i}s" } //This is where the {x}s are labeled indicating seconds
         .labelAndAxisLinePadding(15.dp)
         .build()
 
     // Y-Axis configuration
     val yAxisData = AxisData.Builder()
-        .steps(5)
+        .steps(5) //distance between points
+        .backgroundColor(MaterialTheme.colorScheme.background)
         .labelAndAxisLinePadding(20.dp)
         .labelData { i ->
-            val yMin = pointsData.minOf { it.y }
-            val yMax = pointsData.maxOf { it.y }
+            val yMin = pointsData.minOf { -100f } //minimum value of the y-axis
+            val yMax = pointsData.maxOf { -30f } //maximum value of the y-axis
             val yScale = (yMax - yMin) / 5
             ((i * yScale) + yMin).formatToSinglePrecision()
         }
@@ -290,7 +312,7 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
             lines = listOf(
                 Line(
                     dataPoints = pointsData,
-                    lineStyle = LineStyle(color = Color.Blue),
+                    lineStyle = LineStyle(color = MaterialTheme.colorScheme.primary),
                     intersectionPoint = IntersectionPoint(),
                     selectionHighlightPoint = SelectionHighlightPoint(),
                     shadowUnderLine = ShadowUnderLine(),
@@ -301,7 +323,7 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
         xAxisData = xAxisData,
         yAxisData = yAxisData,
         gridLines = GridLines(),
-        backgroundColor = Color.White
+        backgroundColor = MaterialTheme.colorScheme.background
     )
 
     // Render the LineChart
@@ -314,12 +336,13 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
 }
 
 
-
 @Composable
 fun ActivityLogsTable(beaconLogs: MutableState<List<ActivityLogs>>) {
 
     //
-    //   val logs = beaconLogs.value
+    //val logs = beaconLogs.value
+
+    //Dummy data for testing
     val logs = listOf(
         ActivityLogs(
             logId = 1,

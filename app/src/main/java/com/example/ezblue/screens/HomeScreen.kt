@@ -3,6 +3,7 @@ package com.example.ezblue.screens
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.util.Log
@@ -42,10 +43,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.navigation.MainScreenWithSideBar
+import com.example.ezblue.roomdb.DatabaseProvider
 import com.example.ezblue.viewmodel.BeaconViewModel
 import com.example.ezblue.viewmodel.TaskViewModel
 import com.example.ezblue.viewmodel.UserViewModel
@@ -64,88 +67,31 @@ fun HomeScreen(
     var connectedBeacons by userViewModel.connectedBeacons //Beacons connected to the user are being gathered in the userViewModel
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
-    val rssiReadings = mutableListOf<Int>()
-    var taskCounter = 0
+    val filterList = mutableListOf<ScanFilter>()
+    val scanRecords = mutableListOf<Int>()
 
-    //Not working as expected
+
+    //An attempt to smooth the RSSI reading so its not as sporadic, its works (kind of) but its the best I have for now
     fun smoothRssi(rssi: Int): Int {
-        if (rssiReadings.size >= 5) rssiReadings.removeAt(0) //Keep only the last 5 readings not really a need for more then that for the average
-        rssiReadings.add(rssi)
-        return rssiReadings.average()
-            .toInt() //returning the average RSSI reading to prevent sudden jumps in the RSSI value
-    }
+        scanRecords.add(rssi)
 
-    //Also not working as expected :(
-    @SuppressLint("MissingPermission")
-    fun setScanFrequency(rssi: Int, scanCallback: ScanCallback) {
-        val scanSettings = when {
-            rssi > -60 -> { //closer in range, scan more often
-                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
-            }
-
-            rssi in -80..-60 -> { //bit further away so scan less
-                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
-            }
-
-            else -> { //scan even less for reduced power consumption
-                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
-            }
-        }
-        //TODO implement filter, only scan for regonized devices *REVIEW*
-        bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
-    }
-
-    //when performBeaconTask is called, much like in navGraph, the major of the beacon will be used to determine the task to be performed
-    fun performBeaconTask(beacon: Beacon) {
-        when (beacon.major) {
-            1 -> {
-
-            }
-
-            2 -> { //Automated Messaging
-                //Task Counter is a placeholder at the moment so I dont spam messages until I get logs going
-                if (taskCounter == 1) return //testing Only send one message
-
-                try {
-                    Log.d("TestingStuff", "Configurations ${beacon.configuration}")
-                    taskCounter++
-
-                    //TODO include logs to ensure message isnt sent multiple times
-                    taskViewModel.sendMessage(
-                        beacon = beacon,
-                        context = context,
-                        onSuccess = {
-                            Log.d("HomeScreen", "Message sent successfully")
-
-                        },
-                        onError = {
-                            Log.d("HomeScreen", "Message not sent")
-                        }
-                    )
-                } catch (e: Exception) {
-                    Log.d("TestingStuff", "Error sending message: ${e.message}")
-                }
-            }
-
-            3 -> {
-
-            }
-
-            4 -> {
-
-            }
-
-            5 -> {
-
-            }
-
-            else -> {
-                Log.d("HomeScreen", "Beacon ${beacon.beaconName} is not a recognized beacon")
-            }
+        if (scanRecords.size > 10) { //if the scan record has more then 10 values
+            val beaconRssi = scanRecords.average().toFloat() //average and return the values
+            scanRecords.clear() //then clear the record for the next set of values
+            return beaconRssi.toInt()
+        } else {
+            return rssi
         }
     }
 
     val scanCallback = object : ScanCallback() {
+        //Was having some big issues with the scan callback
+        //It was scanning way too fast so beacon actions were being performed multiple times and logs were being duplicated as a result
+        //I had to implement a debounce system to prevent the scan from happening too often
+        //Inspiration from ChatGpt
+        private val lastExecutionTimeMap = mutableMapOf<String, Long>() //map to keep track of the last time a beacon was scanned
+        private val debounceTimeMillis = 5000L // 5 seconds
+
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
             result?.let {
@@ -155,15 +101,28 @@ fun HomeScreen(
                 val smoothedRssi =
                     smoothRssi(rssi) //attempting to round the RSSI every few seconds to reduce the sparatic RSSI jumps
 
-                setScanFrequency(
-                    smoothedRssi,
-                    this
-                ) // attempting to set the scan frequency - helps with power consumption (nearer beacons cause scans more often)
+                val currentTime = System.currentTimeMillis()
+                val lastExecutionTime = lastExecutionTimeMap[device.address] ?: 0 //Gets the last time the beacon was scanned
+
                 connectedBeacons = connectedBeacons.map { beacon ->
                     if (beacon.beaconId == device.address) { //mapping the connected beacons to the scanned beacons to compare mac addresses
 
-                        if (beacon.configuration != null) { //Prevent null crashes, dont do any task until configurations have been loaded
-                            performBeaconTask(beacon) //perform the task for the beacon
+                        if (currentTime - lastExecutionTime >= debounceTimeMillis) { //Every 5 seconds, allow the beacon to perform a task
+                            lastExecutionTimeMap[device.address] = currentTime
+
+                            if (beacon.configuration != null) { //Prevent null crashes, dont do any task until configurations have been loaded
+                                taskViewModel.handleBeaconTask(
+                                    beacon = beacon,
+                                    context = context,
+                                    onSuccess = {
+
+                                    },
+                                    onError = {
+
+                                    }) //perform the task for the beacon
+                            }
+                        } else {
+                            Log.d("HomeScreen", "Skipping scan for $device.address")
                         }
 
                         beacon.copy( //Update the Rssi and status of the beacon per scan
@@ -172,24 +131,6 @@ fun HomeScreen(
                         )
                     } else {
                         beacon //placeholder, dont think Ill need anything here
-                    }
-                }
-            }
-        }
-
-        override fun onBatchScanResults(results: MutableList<ScanResult>?) { //Review to see is this even needed
-            results?.forEach { result ->
-                val smoothedRssi = smoothRssi(result.rssi)
-                setScanFrequency(smoothedRssi, this)
-
-                connectedBeacons = connectedBeacons.map { beacon ->
-                    if (beacon.bluetoothDevice?.address == result.device.address) {
-                        beacon.copy(
-                            signalStrength = smoothedRssi,
-                            status = if (smoothedRssi > -90) BeaconStatus.ONLINE else BeaconStatus.OFFLINE
-                        )
-                    } else {
-                        beacon
                     }
                 }
             }
@@ -207,20 +148,27 @@ fun HomeScreen(
         userViewModel.fetchBeaconsAndConfigurations()
 
         while (true) {
-            Log.d("HomeScreen", "Scanning")
             //start the scan in a balanced state to check for beacons
             val scanSettings =
                 ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
 
+            connectedBeacons.map {
+                val scanFilter = ScanFilter.Builder()
+                    .setDeviceAddress(it.beaconId)
+                    .build()
+
+                filterList.add(scanFilter)
+            }
+
             //begin the scan at home screen
-            bluetoothLeScanner?.startScan(null, scanSettings, scanCallback)
-            Log.d("TestingStuff", "Scanning")
+            bluetoothLeScanner?.startScan(filterList, scanSettings, scanCallback)
+
             delay(10000) //scan for 10 seconds
 
             bluetoothLeScanner?.stopScan(scanCallback) //stop the scan
-            Log.d("TestingStuff", "Stopping Scan")
 
-            delay(5000) //wait 5 seconds before starting the scan again
+
+            delay(3500) //wait 3.5 seconds before starting the scan again (random numbers that suited)
         }
     }
 
@@ -238,7 +186,6 @@ fun HomeScreen(
         onSettingsClick = {},
         onLogoutClick = onLogoutClick
     ) {
-        //HomeScreenContent(userViewModel = userViewModel, beaconViewModel = beaconViewModel)
 //
 //        if (connectedBeacons == null) {
 //            Box (
@@ -424,12 +371,3 @@ fun BeaconCard(
     }
 }
 
-//fun updateBeaconStatus(beacon: Beacon, currentSignalStrength: Int?): Beacon {
-//    val isOnline = currentSignalStrength != null && currentSignalStrength > -90 //Anything less then 90dBm is considered offline
-//    val currentTime = Date()
-//
-//    return beacon.copy(
-//        status = if (isOnline) BeaconStatus.ONLINE else BeaconStatus.OFFLINE,
-//        lastDetected = if (isOnline) currentTime else beacon.lastDetected
-//    )
-//}

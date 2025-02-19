@@ -87,7 +87,6 @@ fun NavGraph(
                 },
                 onConnectClick = { beacon ->
                     //Parcelable is a better option than JSON here
-                    Log.d("NavGraph", "0 beacon: $beacon")
                     navController.currentBackStackEntry?.savedStateHandle?.set("beacon", beacon)
                     navController.navigate("beaconConnectionScreen")
                 }
@@ -99,7 +98,6 @@ fun NavGraph(
             val beacon =
                 navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
 
-            Log.d("NavGraph", "1 beacon: $beacon")
 
             LaunchedEffect(Unit) {
                 if (beacon == null) {
@@ -156,7 +154,6 @@ fun NavGraph(
             val beacon =
                 navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
 
-            Log.d("NavGraph", "2 beacon: $beacon")
 
             AutomatedMessagingSetupScreen(
                 navController = navController,

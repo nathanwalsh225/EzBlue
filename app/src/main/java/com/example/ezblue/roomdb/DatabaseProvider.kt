@@ -7,7 +7,13 @@ import androidx.room.Room
 object DatabaseProvider {
     private var INSTANCE: AppDatabase? = null
 
+
+
     fun getRoomDatabase(context: Context): AppDatabase {
+
+
+        context.deleteDatabase("ezblue-db")
+
 
         if (INSTANCE == null) {
             INSTANCE = Room.databaseBuilder(
