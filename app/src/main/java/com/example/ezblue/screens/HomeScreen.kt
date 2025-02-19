@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +57,8 @@ fun HomeScreen(
     navController: NavController,
     onLogoutClick: () -> Unit,
     userViewModel: UserViewModel = hiltViewModel(),
-    taskViewModel: TaskViewModel = hiltViewModel()
+    taskViewModel: TaskViewModel = hiltViewModel(),
+    onNavigateToBeaconInfoScreen: (Beacon) -> Unit
 ) {
     val context = LocalContext.current
     var connectedBeacons by userViewModel.connectedBeacons //Beacons connected to the user are being gathered in the userViewModel
@@ -108,6 +110,7 @@ fun HomeScreen(
                     Log.d("TestingStuff", "Configurations ${beacon.configuration}")
                     taskCounter++
 
+                    //TODO include logs to ensure message isnt sent multiple times
                     taskViewModel.sendMessage(
                         beacon = beacon,
                         context = context,
@@ -160,7 +163,6 @@ fun HomeScreen(
                     if (beacon.beaconId == device.address) { //mapping the connected beacons to the scanned beacons to compare mac addresses
 
                         if (beacon.configuration != null) { //Prevent null crashes, dont do any task until configurations have been loaded
-                            Log.d("TestingStuff", "Performing task for beacon ${beacon.beaconName}")
                             performBeaconTask(beacon) //perform the task for the beacon
                         }
 
@@ -222,7 +224,11 @@ fun HomeScreen(
         }
     }
 
-
+    DisposableEffect(Unit) { //Will stop the scan if the user leaves the screen, just to ensure scanning doesnt continue in the background
+        onDispose {
+            bluetoothLeScanner?.stopScan(scanCallback)
+        }
+    }
 
     MainScreenWithSideBar(
         navController = navController,
@@ -267,7 +273,10 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(connectedBeacons) { beacon ->
-                    BeaconCard(beacon = beacon)
+                    BeaconCard(
+                        beacon = beacon,
+                        onNavigateToBeaconInfoScreen = onNavigateToBeaconInfoScreen
+                    )
                 }
             }
         }
@@ -275,7 +284,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun BeaconCard(beacon: Beacon) {
+fun BeaconCard(
+    beacon: Beacon,
+    onNavigateToBeaconInfoScreen: (Beacon) -> Unit
+) {
 
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -391,7 +403,7 @@ fun BeaconCard(beacon: Beacon) {
                             }
 
                             Button(
-                                onClick = { /*//TODO*/ },
+                                onClick = { onNavigateToBeaconInfoScreen(beacon) },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
                             ) {
                                 Text(

@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.ezblue"
-        minSdk = 25
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -64,7 +64,6 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
-
 
 
 }
@@ -114,6 +113,11 @@ dependencies {
 //    annotationProcessor(libs.room.compiler)
     implementation("androidx.room:room-runtime:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+
+    //
+    implementation("co.yml:ycharts:2.1.0")
+
+
 }
 
 kapt {

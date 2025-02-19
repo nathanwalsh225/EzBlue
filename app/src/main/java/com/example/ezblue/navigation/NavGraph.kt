@@ -11,6 +11,7 @@ import com.example.ezblue.model.Beacon
 import com.example.ezblue.roomdb.DatabaseProvider
 import com.example.ezblue.screens.AutomatedMessagingSetupScreen
 import com.example.ezblue.screens.BeaconConnectionScreen
+import com.example.ezblue.screens.BeaconInfoScreen
 import com.example.ezblue.screens.ConnectionsScreen
 import com.example.ezblue.screens.HomeScreen
 import com.example.ezblue.screens.LoginScreen
@@ -67,6 +68,10 @@ fun NavGraph(
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
+                },
+                onNavigateToBeaconInfoScreen = { beacon ->
+                    navController.currentBackStackEntry?.savedStateHandle?.set("beacon", beacon)
+                    navController.navigate("beaconInfo")
                 }
             )
         }
@@ -121,6 +126,30 @@ fun NavGraph(
 
                 }
             )
+        }
+
+        composable("beaconInfo") {
+            val beacon =
+                navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
+
+            LaunchedEffect(Unit) {
+                if (beacon == null) {
+                    navController.navigate("home") {
+                        popUpTo("beaconInfo") { inclusive = true }
+                    }
+                }
+            }
+
+            BeaconInfoScreen(
+                beacon = beacon!!,
+                activityLogsDao = database.activityLogsDao(),
+                onBackClicked = {
+                    navController.navigate("home") {
+                        popUpTo("beaconInfo") { inclusive = true }
+                    }
+                }
+            )
+
         }
 
         composable("AutomatedMessagingSetupScreen") {

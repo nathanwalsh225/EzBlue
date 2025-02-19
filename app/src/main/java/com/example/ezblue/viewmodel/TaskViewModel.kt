@@ -61,18 +61,36 @@ class TaskViewModel @Inject constructor(
                         LogResults.SUCCESS
                     )
                 )
-
-                if (id > 0) { //TODO find something to do with the return type
-                    Log.d("HomeScreen", "Log inserted successfully")
-                } else {
-                    Log.d("HomeScreen", "Log not inserted")
-                }
+//
+//                if (id > 0) { //TODO find something to do with the return type
+//                    Log.d("TestingStuff", "Log inserted successfully")
+//                } else {
+//                    Log.d("TestingStuff", "Log not inserted")
+//                }
             }
 
             Log.d("TestingStuff", "It send")
             onSuccess() // This will only run if no exception is thrown
         } catch (e: Exception) {
            Log.d("TestingStuff", "Error sending message: ${e.message}")
+            viewModelScope.launch(Dispatchers.IO) {
+                val id = activityLogsDao.insertLogs( //Once the message has been sent, I want to log it in the room database activity logs table
+                    ActivityLogs(
+                        0,
+                        beacon.beaconId,
+                        beacon.role,
+                        beacon.configuration!!.parameters["message"] as String + " sent to " + beacon.configuration!!.parameters["contactNumber"] as String,
+                        SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(Date(System.currentTimeMillis())),
+                        LogResults.FAILURE
+                    )
+                )
+
+                if (id > 0) { //TODO find something to do with the return type
+                    Log.d("TestingStuff", "Log inserted successfully")
+                } else {
+                    Log.d("TestingStuff", "Log not inserted")
+                }
+            }
             onError()
         }
     }

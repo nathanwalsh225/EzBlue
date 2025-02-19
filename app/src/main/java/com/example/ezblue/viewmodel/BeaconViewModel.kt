@@ -8,17 +8,24 @@ import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ezblue.model.ActivityLogs
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.model.Configuration
 import com.example.ezblue.model.Visibility
+import com.example.ezblue.repositories.ActivityLogsDao
 import com.example.ezblue.repositories.ConfigurationRepository
 import com.example.ezblue.repositories.BeaconRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.lang.Error
 import java.util.Date
 import javax.inject.Inject
@@ -34,6 +41,10 @@ class BeaconViewModel @Inject constructor(
     private val _scannedBeacons = MutableLiveData<List<Beacon>>() //customizable beacon list for use only by the view model
     val scannedBeacons: LiveData<List<Beacon>> = _scannedBeacons //now copying the list to a public "read-only" list so I can send that back
     //This way helps alot with editing beacons without overcomplicating who gets the list of said beacons
+
+    private val _beaconLogs = mutableStateOf<List<ActivityLogs>>(emptyList())
+    val beaconLogs = _beaconLogs
+
 
     private val connectedGatts = mutableMapOf<String, BluetoothGatt>()
     private val beaconList = mutableMapOf<String, Beacon>()
@@ -219,6 +230,14 @@ class BeaconViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    fun fetchBeaconLogs(beaconId: String, activityLogsDao: ActivityLogsDao) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val beaconLogs = activityLogsDao.getLogsByBeaconId(beaconId)
+            Log.d("TestingStuff", "Beacon Logs: $beaconLogs")
+            _beaconLogs.value = beaconLogs
         }
     }
 
