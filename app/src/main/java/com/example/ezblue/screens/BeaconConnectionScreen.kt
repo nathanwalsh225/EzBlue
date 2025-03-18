@@ -86,7 +86,7 @@ fun BeaconConnectionScreen(
                     Spacer(Modifier.size(48.dp))
                 },
 
-            )
+                )
         }
     ) { paddingValues ->
 
@@ -127,7 +127,11 @@ fun BeaconConnectionScreen(
 
                 OutlinedTextField(
                     value = beaconName.value,
-                    onValueChange = { beaconName.value = it },
+                    onValueChange = {
+                        if (beaconName.value.length <= 20) {
+                            beaconName.value = it
+                        }
+                    },
                     placeholder = { Text("Give your new beacon a name...") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -226,7 +230,7 @@ fun BeaconConnectionScreen(
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                Text( //TODO implement min max
+                Text(
                     text = "Max 100 characters",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -237,8 +241,16 @@ fun BeaconConnectionScreen(
 
                 OutlinedTextField(
                     value = beaconNote.value,
-                    onValueChange = { beaconNote.value = it },
-                    placeholder = { if (beaconTask.intValue == 0) Text("Leave a short note to distinguish your beacon...") else Text(setBeaconNotePlaceholder(beaconTask.intValue)) },
+                    onValueChange = {
+                        if (beaconNote.value.length <= 100) {
+                            beaconNote.value = it
+                        }
+                    },
+                    placeholder = {
+                        if (beaconTask.intValue == 0) Text("Leave a short note to distinguish your beacon...") else Text(
+                            setBeaconNotePlaceholder(beaconTask.intValue)
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
@@ -281,7 +293,9 @@ fun BeaconConnectionScreen(
                         onClick = {
                             val configuredBeacon = beacon.copy(
                                 beaconName = beaconName.value,
-                                beaconNote = if (beaconNote.value.equals("")) setBeaconNotePlaceholder(beaconTask.intValue) else beaconNote.value,
+                                beaconNote = if (beaconNote.value.equals("")) setBeaconNotePlaceholder(
+                                    beaconTask.intValue
+                                ) else beaconNote.value,
                                 major = beaconTask.intValue,
                                 role = beaconRole.value
                             )

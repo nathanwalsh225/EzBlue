@@ -38,6 +38,6 @@ class ExampleUnitTest {
 //        )).thenReturn(Unit)
 //
 //        // Call the method and assert the result
-//        assertTrue(authViewModel.isEmailAvailable("test@example.com"))
+//        assertTrue(authViewModel.checkEmail("test@example.com"))
 //    }
 }

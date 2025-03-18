@@ -19,7 +19,7 @@ class BeaconRepository @Inject constructor(
                 mapOf(
                     "beaconId" to beacon.beaconId,
                     "beaconName" to beacon.beaconName,
-                    "beaconNote" to beacon.beaconNote, //TODO why null
+                    "beaconNote" to beacon.beaconNote,
                     "createdAt" to beacon.createdAt,
                     "lastDetected" to beacon.lastDetected,
                     "major" to beacon.major,
@@ -38,8 +38,12 @@ class BeaconRepository @Inject constructor(
     }
 
 
-    fun getConnectedBeacons(userId: String, onSuccess: (List<Beacon>) -> Unit, onError: (String) -> Unit) {
-         firestore.collection(BEACON_COLLECTION)
+    fun getConnectedBeacons(
+        userId: String,
+        onSuccess: (List<Beacon>) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        firestore.collection(BEACON_COLLECTION)
             .whereEqualTo("ownerId", userId)
             .get()
             .addOnSuccessListener { result ->

@@ -340,51 +340,51 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
 fun ActivityLogsTable(beaconLogs: MutableState<List<ActivityLogs>>) {
 
     //
-    //val logs = beaconLogs.value
+    val logs = beaconLogs.value.takeLast(15) //Limiting the number of logs to 15 to not clutter the screen
 
     //Dummy data for testing
-    val logs = listOf(
-        ActivityLogs(
-            logId = 1,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Home Automation",
-            parameters = "Device: Lights, Action: On",
-            timestamp = "2024-12-30 14:35",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 2,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Home Automation",
-            parameters = "Device: Heater, Action: Off",
-            timestamp = "2024-12-29 17:44",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 3,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Home Automation",
-            parameters = "Device: Lights, Action: On",
-            timestamp = "2024-12-28 14:11",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 4,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Home Automation",
-            parameters = "Device: Lights, Action: On",
-            timestamp = "2024-12-28 14:10",
-            status = LogResults.FAILURE
-        ),
-        ActivityLogs(
-            logId = 5,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Send Message",
-            parameters = "Recipient: Dad",
-            timestamp = "2024-12-28 14:10",
-            status = LogResults.SUCCESS
-        )
-    )
+//    val logs = listOf(
+//        ActivityLogs(
+//            logId = 1,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Home Automation",
+//            parameters = "Device: Lights, Action: On",
+//            timestamp = "2024-12-30 14:35",
+//            status = LogResults.SUCCESS
+//        ),
+//        ActivityLogs(
+//            logId = 2,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Home Automation",
+//            parameters = "Device: Heater, Action: Off",
+//            timestamp = "2024-12-29 17:44",
+//            status = LogResults.SUCCESS
+//        ),
+//        ActivityLogs(
+//            logId = 3,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Home Automation",
+//            parameters = "Device: Lights, Action: On",
+//            timestamp = "2024-12-28 14:11",
+//            status = LogResults.SUCCESS
+//        ),
+//        ActivityLogs(
+//            logId = 4,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Home Automation",
+//            parameters = "Device: Lights, Action: On",
+//            timestamp = "2024-12-28 14:10",
+//            status = LogResults.FAILURE
+//        ),
+//        ActivityLogs(
+//            logId = 5,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Send Message",
+//            parameters = "Recipient: Dad",
+//            timestamp = "2024-12-28 14:10",
+//            status = LogResults.SUCCESS
+//        )
+//    )
 
 
 

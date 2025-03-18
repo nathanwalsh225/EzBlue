@@ -96,7 +96,7 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation(libs.accompanist.permissions)
     testImplementation(libs.junit)
-    testImplementation(libs.mockito.kotlin)
+//    testImplementation(libs.mockito.kotlin)
     testImplementation("org.mockito:mockito-core:4.0.0")
     testImplementation("org.mockito:mockito-inline:4.0.0")
     androidTestImplementation(libs.androidx.junit)
@@ -114,9 +114,15 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
 
-    //
+    //YCharts
     implementation("co.yml:ycharts:2.1.0")
 
+    //Testing
+    implementation("androidx.arch.core:core-testing:2.1.0")
+    testImplementation("io.mockk:mockk:1.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.0")
+    testImplementation("androidx.arch.core:core-testing:2.1.0")
+    testImplementation("org.robolectric:robolectric:4.10.3")
 
 }
 
