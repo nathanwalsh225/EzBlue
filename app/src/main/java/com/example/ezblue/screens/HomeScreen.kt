@@ -73,7 +73,8 @@ fun HomeScreen(
     onLogoutClick: () -> Unit,
     userViewModel: UserViewModel = hiltViewModel(),
     taskViewModel: TaskViewModel = hiltViewModel(),
-    onNavigateToBeaconInfoScreen: (Beacon) -> Unit
+    onNavigateToBeaconInfoScreen: (Beacon) -> Unit,
+    onConfigureBeacon: (Beacon) -> Unit
 ) {
     val context = LocalContext.current
     var connectedBeacons by userViewModel.connectedBeacons //Beacons connected to the user are being gathered in the userViewModel
@@ -243,7 +244,8 @@ fun HomeScreen(
                 items(connectedBeacons) { beacon ->
                     BeaconCard(
                         beacon = beacon,
-                        onNavigateToBeaconInfoScreen = onNavigateToBeaconInfoScreen
+                        onNavigateToBeaconInfoScreen = onNavigateToBeaconInfoScreen,
+                        onConfigureBeacon = onConfigureBeacon
                     )
                 }
             }
@@ -254,7 +256,8 @@ fun HomeScreen(
 @Composable
 fun BeaconCard(
     beacon: Beacon,
-    onNavigateToBeaconInfoScreen: (Beacon) -> Unit
+    onNavigateToBeaconInfoScreen: (Beacon) -> Unit,
+    onConfigureBeacon: (Beacon) -> Unit
 ) {
 
     var isExpanded by remember { mutableStateOf(false) }
@@ -393,7 +396,9 @@ fun BeaconCard(
                             verticalAlignment = Alignment.Bottom
                         ) {
                             Button(
-                                onClick = { /*TODO*/ },
+                                onClick = {
+                                    Log.d("NavGraph", "Configure Beacon $beacon")
+                                    onConfigureBeacon(beacon) },
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
@@ -406,7 +411,9 @@ fun BeaconCard(
                             }
 
                             Button(
-                                onClick = { onNavigateToBeaconInfoScreen(beacon) },
+                                onClick = {
+                                    Log.d("NavGraph", "Murder")
+                                    onNavigateToBeaconInfoScreen(beacon) },
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,

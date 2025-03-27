@@ -81,6 +81,7 @@ fun AutomatedMessagingSetupScreen(
     val permissionGranted = remember { mutableStateOf(false) }
     val requestPermission = remember { mutableStateOf(false) }
     val onNextClicked = remember { mutableStateOf(false) }
+    val update = remember { mutableStateOf(false) }
     val contactName = remember { mutableStateOf("") }
     val contactNumber = remember { mutableStateOf("") }
     var contactMsg by remember { mutableStateOf("") }
@@ -131,6 +132,13 @@ fun AutomatedMessagingSetupScreen(
                 )
             )
         }
+    }
+
+    LaunchedEffect(Unit) {
+        Log.d("TestingStuff", "${update.value}")
+        update.value = beaconViewModel.isBeaconConnected(beacon.beaconId)
+
+        Log.d("TestingStuff", "${update.value}")
     }
 
     // Permission have been granted yet
@@ -362,21 +370,42 @@ fun AutomatedMessagingSetupScreen(
                             onClick = {
                                 //Where the task will be saved
                                 try {
-                                    beaconViewModel.connectToBeacon(
-                                        beacon = beacon,
-                                        context = context,
-                                        parameters = mapOf(
-                                            "contactNumber" to contactNumber.value,
-                                            "message" to contactMsg
-                                        ),
-                                        onSuccess = {
-                                            //onAutomatedMessagingSetupSuccess()
-                                        },
-                                        onFailure = { error ->
+                                    if(update.value) {
+                                        beaconViewModel.updateBeacon(
+                                            beacon = beacon,
+                                            parameters = mapOf(
+                                                "contactNumber" to contactNumber.value,
+                                                "message" to contactMsg
+                                            ),
+                                            onSuccess = {
+                                                onAutomatedMessagingSetupSuccess()
+                                            },
+                                            onFailure = { error ->
 
-                                        }
-                                    )
+                                            }
+                                        )
+                                        Log.d("TestingStuff", "Updating")
+                                    } else {
+                                        beaconViewModel.connectToBeacon(
+                                            beacon = beacon,
+                                            context = context,
+                                            parameters = mapOf(
+                                                "contactNumber" to contactNumber.value,
+                                                "message" to contactMsg
+                                            ),
+                                            onSuccess = {
+                                                onAutomatedMessagingSetupSuccess()
+                                            },
+                                            onFailure = { error ->
+
+                                            }
+                                        )
+                                        Log.d("TestingStuff", "Connecting")
+
+                                    }
                                 } catch (e: Exception) {
+                                    //TODO implement fallback
+                                    Log.e("AutomatedMessagingSetupScreen", e.message.toString())
                                 }
                             },
                             modifier = Modifier

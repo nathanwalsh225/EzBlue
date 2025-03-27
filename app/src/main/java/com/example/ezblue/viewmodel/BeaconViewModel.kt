@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothProfile
 import android.content.Context
+import android.util.DisplayMetrics
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
@@ -25,7 +26,10 @@ import com.example.ezblue.repositories.BeaconRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.lang.Error
 import java.util.Date
 import javax.inject.Inject
@@ -38,8 +42,10 @@ class BeaconViewModel @Inject constructor(
     private val configurationsRepository: ConfigurationRepository,
 ) : ViewModel() {
 
-    private val _scannedBeacons = MutableLiveData<List<Beacon>>() //customizable beacon list for use only by the view model
-    val scannedBeacons: LiveData<List<Beacon>> = _scannedBeacons //now copying the list to a public "read-only" list so I can send that back
+    private val _scannedBeacons =
+        MutableLiveData<List<Beacon>>() //customizable beacon list for use only by the view model
+    val scannedBeacons: LiveData<List<Beacon>> =
+        _scannedBeacons //now copying the list to a public "read-only" list so I can send that back
     //This way helps alot with editing beacons without overcomplicating who gets the list of said beacons
 
     private val _beaconLogs = mutableStateOf<List<ActivityLogs>>(emptyList())
@@ -50,7 +56,11 @@ class BeaconViewModel @Inject constructor(
     private val beaconList = mutableMapOf<String, Beacon>()
     private var bluetoothResetAttempts = 0
 
-    fun fetchBeaconConfigurations(beaconId: String, onSuccess: (Configuration) -> Unit, onFailure: (String) -> Unit) {
+    fun fetchBeaconConfigurations(
+        beaconId: String,
+        onSuccess: (Configuration) -> Unit,
+        onFailure: (String) -> Unit
+    ) {
         return configurationsRepository.getConfiguration(
             userId = FirebaseAuth.getInstance().currentUser!!.uid,
             beaconId = beaconId,
@@ -100,8 +110,71 @@ class BeaconViewModel @Inject constructor(
         _scannedBeacons.postValue(beaconList.values.toList())
     }
 
+   @OptIn(ExperimentalCoroutinesApi::class)
+   suspend fun isBeaconConnected(beaconId: String): Boolean {
+        var connectedBeacons: List<Beacon> = emptyList()
+
+        withContext(Dispatchers.IO) {
+            val result = suspendCancellableCoroutine<List<Beacon>> { cont ->
+                beaconRepository.getConnectedBeacons(
+                    userId = FirebaseAuth.getInstance().currentUser!!.uid,
+                    onSuccess = { beaconList ->
+                        cont.resume(beaconList) {}
+                    },
+                    onError = { error ->
+                        Log.e("BLE_TEST", "Failed to fetch connected beacons: $error")
+                        cont.resume(emptyList()) {}
+                    }
+                )
+            }
+
+            connectedBeacons = result
+        }
+
+        return connectedBeacons.any { it.beaconId == beaconId }
+    }
+
+    fun updateBeacon(
+        beacon: Beacon,
+        parameters: Map<String, String>,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
+        Log.d("TestingStuff", "Updating Beacon: $beacon")
+
+        beaconRepository.updateBeacon(
+            beacon = beacon,
+            onSuccess = {
+                Log.d("TestingStuff", "BeaconU Updated")
+            },
+            onError = { e ->
+                onFailure("Failed to update beacon - Error: $e")
+            }
+        )
+
+        configurationsRepository.updateConfiguration(
+            userId = FirebaseAuth.getInstance().currentUser!!.uid,
+            beaconId = beacon.beaconId,
+            parameters = parameters,
+            visibility = if (beacon.role == "Open Links") Visibility.PUBLIC.name else Visibility.PRIVATE.name,
+            onSuccess = {
+                Log.d("TestingStuff", "Configuration Updated")
+            },
+            onError = { e ->
+                onFailure("Failed to update configuration - Error: $e")
+            }
+        )
+
+    }
+
     @SuppressLint("MissingPermission")
-    fun connectToBeacon(beacon: Beacon, context: Context, parameters: Map<String, String>, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+    fun connectToBeacon(
+        beacon: Beacon,
+        context: Context,
+        parameters: Map<String, String>,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
 
         Log.e("BeaconSetup", "Entered Connection")
 
@@ -122,7 +195,12 @@ class BeaconViewModel @Inject constructor(
         try {
 
             Log.e("BeaconSetup", "Entered Try")
-            val bluetoothGatt = bluetoothDevice.connectGatt(context, false, bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE) // connect to the device, also inform the device that we are using BLE
+            val bluetoothGatt = bluetoothDevice.connectGatt(
+                context,
+                false,
+                bluetoothGattCallback,
+                BluetoothDevice.TRANSPORT_LE
+            ) // connect to the device, also inform the device that we are using BLE
 
             if (bluetoothGatt == null) {
                 //Had an issue myself where the bluetoothGattCallback method was not being called, after ALOT of time debugging,
@@ -136,7 +214,13 @@ class BeaconViewModel @Inject constructor(
                     Thread.sleep(2000) // give bluetooth the time to turn off
                     bluetoothAdapter.enable()
                     Thread.sleep(2000) // give bluetooth the time to turn on
-                    connectToBeacon(beacon, context, parameters, onSuccess, onFailure) // call the function again to try reconnecting
+                    connectToBeacon(
+                        beacon,
+                        context,
+                        parameters,
+                        onSuccess,
+                        onFailure
+                    ) // call the function again to try reconnecting
                 } else {
                     Log.e("BLE_TEST", "Failed to connect after Bluetooth reset")
                     onFailure("Failed to connect to beacon - We recommend Bluetooth Services and restarting the app")
@@ -146,7 +230,8 @@ class BeaconViewModel @Inject constructor(
 
             Log.e("BeaconSetup", "Bluetooth Okay")
             bluetoothResetAttempts = 0 // on success we will reset the attempts
-            connectedGatts[beacon.beaconId] = bluetoothGatt // save the gatt to the list of connected gatts
+            connectedGatts[beacon.beaconId] =
+                bluetoothGatt // save the gatt to the list of connected gatts
 
             val ownerId = FirebaseAuth.getInstance().currentUser!!.uid
             val beaconSetup = beacon.copy(

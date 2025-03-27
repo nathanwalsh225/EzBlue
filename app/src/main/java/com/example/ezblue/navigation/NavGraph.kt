@@ -73,6 +73,12 @@ fun NavGraph(
                 onNavigateToBeaconInfoScreen = { beacon ->
                     navController.currentBackStackEntry?.savedStateHandle?.set("beacon", beacon)
                     navController.navigate("beaconInfo")
+                },
+                onConfigureBeacon = { beacon ->
+                    Log.d("NavGraph", "Configure Beacon $beacon")
+                    navController.currentBackStackEntry?.savedStateHandle?.set("beacon", beacon)
+                    navController.currentBackStackEntry?.savedStateHandle?.set("update", true)
+                    navController.navigate("beaconConnectionScreen")
                 }
             )
         }
@@ -107,6 +113,8 @@ fun NavGraph(
 
             val beacon =
                 navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
+            val update =
+                navController.previousBackStackEntry?.savedStateHandle?.get<Boolean>("update")
 
 
             LaunchedEffect(Unit) {
@@ -132,10 +140,16 @@ fun NavGraph(
                             "beacon",
                             configuredBeacon
                         )
+                        if (update == true) {
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "update",
+                                true
+                            )
+                        }
                         navController.navigate("AutomatedMessagingSetupScreen")
                     }
 
-                }
+                },
             )
         }
 
@@ -167,7 +181,6 @@ fun NavGraph(
             val beacon =
                 navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
 
-
             AutomatedMessagingSetupScreen(
                 navController = navController,
                 onBackClicked = {
@@ -175,7 +188,9 @@ fun NavGraph(
                 },
                 beacon = beacon!!,
                 onAutomatedMessagingSetupSuccess = {
-                    //navController.popBackStack()
+                    navController.navigate("home") {
+                        popUpTo("AutomatedMessagingSetupScreen") { inclusive = true }
+                    }
                 }
             )
         }
