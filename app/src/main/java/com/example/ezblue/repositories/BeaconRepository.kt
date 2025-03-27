@@ -77,6 +77,38 @@ class BeaconRepository @Inject constructor(
             }
     }
 
+    fun deleteBeacon(
+        beacon: Beacon,
+        userId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+
+        firestore.collection(BEACON_COLLECTION)
+            .whereEqualTo("beaconId", beacon.beaconId)
+            .whereEqualTo("ownerId", userId)
+            .get()
+            .addOnSuccessListener { doc ->
+                if (doc.isEmpty) {
+                    onError("No beacon found with beaconId: ${beacon.beaconId}")
+                } else {
+                    val docId = doc.documents[0].id
+                    firestore.collection(BEACON_COLLECTION)
+                        .document(docId)
+                        .delete()
+                        .addOnSuccessListener {
+                            onSuccess()
+                        }
+                        .addOnFailureListener {
+                            onError("Failed to delete Beacon - ${it.message}")
+                        }
+                }
+
+            }
+            .addOnFailureListener {
+                onError("Failed to delete Beacon - ${it.message}")
+            }
+    }
 
     fun getConnectedBeacons(
         userId: String,

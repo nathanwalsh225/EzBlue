@@ -76,6 +76,31 @@ class ConfigurationRepository @Inject constructor(
             }
     }
 
+    fun deleteConfiguration(beaconId: String, userId: String, onSuccess: () -> Unit, onError: (String) -> Unit ) {
+        FirebaseFirestore.getInstance().collection(CONFIGURATION_COLLECTION)
+            .whereEqualTo("beaconId", beaconId)
+            .whereEqualTo("userId", userId)
+            .get()
+            .addOnSuccessListener { configurations ->
+                if (configurations != null) {
+                    for (configuration in configurations) {
+                        FirebaseFirestore.getInstance().collection(CONFIGURATION_COLLECTION)
+                            .document(configuration.id)
+                            .delete()
+                            .addOnSuccessListener {
+                                onSuccess()
+                            }
+                            .addOnFailureListener {
+                                onError(it.message ?: "Failed to delete configuration")
+                            }
+                    }
+                }
+            }
+            .addOnFailureListener { exception ->
+                onError(exception.message ?: "Failed to get configuration")
+            }
+    }
+
     //https://stackoverflow.com/questions/74934213/how-to-get-list-from-firestore-in-kotlin
     fun getConfiguration(userId: String, beaconId: String, onSuccess: (Configuration) -> Unit, onError: (String) -> Unit) {
         FirebaseFirestore.getInstance().collection(CONFIGURATION_COLLECTION)

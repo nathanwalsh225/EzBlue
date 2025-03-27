@@ -110,8 +110,8 @@ class BeaconViewModel @Inject constructor(
         _scannedBeacons.postValue(beaconList.values.toList())
     }
 
-   @OptIn(ExperimentalCoroutinesApi::class)
-   suspend fun isBeaconConnected(beaconId: String): Boolean {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun isBeaconConnected(beaconId: String): Boolean {
         var connectedBeacons: List<Beacon> = emptyList()
 
         withContext(Dispatchers.IO) {
@@ -264,6 +264,43 @@ class BeaconViewModel @Inject constructor(
         }
 
     }
+
+    fun deleteBeacon(beacon: Beacon) {
+        val user = FirebaseAuth.getInstance().currentUser
+
+        if (user == null) {
+            Log.e("TestingStuff", "User not logged in")
+            return
+        }
+            //TODO is there some @transactional annotation I could use
+        try {
+            beaconRepository.deleteBeacon(
+                beacon = beacon,
+                userId = user.uid,
+                onSuccess = {
+                    Log.d("TestingStuff", "Beacon Deleted")
+                },
+                onError = { e ->
+                    Log.e("TestingStuff", "Failed to delete beacon - Error: $e")
+                }
+            )
+
+            configurationsRepository.deleteConfiguration(
+                beaconId = beacon.beaconId,
+                userId = user.uid,
+                onSuccess = {
+                    Log.d("TestingStuff", "Configuration Deleted")
+                },
+                onError = { e ->
+                    Log.e("TestingStuff", "Failed to delete configuration - Error: $e")
+                }
+            )
+
+        } catch (e: Error) {
+            Log.e("TestingStuff", "There was an error Deleting the beacon: ${e.message}")
+        }
+    }
+
 
     private val bluetoothGattCallback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")

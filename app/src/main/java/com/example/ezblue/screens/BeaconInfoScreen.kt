@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -99,6 +100,7 @@ fun BeaconInfoScreen(
     onBackClicked: () -> Unit,
     beaconViewModel: BeaconViewModel = hiltViewModel()
 ) {
+    val openDeleteDialog = remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
     //val beaconLogs = beaconViewModel.beaconLogs
     val beaconLogs = listOf(
@@ -141,46 +143,6 @@ fun BeaconInfoScreen(
             parameters = "Recipient: Admin, Msg: Status Update",
             timestamp = "2025-03-26 08:55:33",
             status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 6,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Device Deactivation",
-            parameters = "Device: Lights, Action: Off",
-            timestamp = "2025-03-26 08:50:01",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 7,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Signal Check",
-            parameters = "RSSI: -60 dBm",
-            timestamp = "2025-03-26 08:45:22",
-            status = LogResults.FAILURE
-        ),
-        ActivityLogs(
-            logId = 8,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Firmware Update",
-            parameters = "Version: 1.2.3",
-            timestamp = "2025-03-26 08:40:15",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 9,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Device Activation",
-            parameters = "Device: Fan, Action: On",
-            timestamp = "2025-03-26 08:35:09",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 10,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Connection Attempt",
-            parameters = "Target: Server",
-            timestamp = "2025-03-26 08:30:44",
-            status = LogResults.FAILURE
         )
     )
     val beaconRssi = remember { mutableStateListOf<Float>() }
@@ -414,12 +376,49 @@ fun BeaconInfoScreen(
 
             }
 
+            item{
+                Button(
+                    onClick = { openDeleteDialog.value = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp, end = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.elevatedButtonElevation(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text(
+                        text = "Delete Beacon",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Red,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+
+                when {
+                    openDeleteDialog.value -> {
+                        DeleteAlert(
+                            confirmDelete = {
+                                beaconViewModel.deleteBeacon(beacon)
+                                onBackClicked()
+                            },
+                            closeDialog = { openDeleteDialog.value = false }
+                        )
+                    }
+                }
+            }
+
+
             item {
                 Button(
                     onClick = { onBackClicked() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(start = 12.dp, end = 12.dp, bottom = 16.dp),
                     shape = RoundedCornerShape(12.dp),
                     elevation = ButtonDefaults.elevatedButtonElevation(),
                     colors = ButtonDefaults.buttonColors(
@@ -429,8 +428,9 @@ fun BeaconInfoScreen(
                 ) {
                     Text(
                         text = "Back",
+                        fontSize = 20.sp,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(8.dp)
                     )
                 }
             }
@@ -724,6 +724,55 @@ fun TableCell(
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
 
+    )
+}
+
+@Composable
+fun DeleteAlert(confirmDelete: () -> Unit, closeDialog: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = { /*TODO*/ },
+        title = {
+            Text(
+                text = "Delete Beacon",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to delete this beacon?",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = { confirmDelete() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text(
+                    text = "Delete",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = { closeDialog() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text(
+                    text = "Cancel",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
     )
 }
 
