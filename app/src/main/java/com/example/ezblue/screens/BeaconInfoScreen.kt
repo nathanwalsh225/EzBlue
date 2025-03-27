@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,10 +24,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +57,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,7 +100,89 @@ fun BeaconInfoScreen(
     beaconViewModel: BeaconViewModel = hiltViewModel()
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val beaconLogs = beaconViewModel.beaconLogs
+    //val beaconLogs = beaconViewModel.beaconLogs
+    val beaconLogs = listOf(
+        ActivityLogs(
+            logId = 1,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Device Activation",
+            parameters = "Device: Lights, Action: On",
+            timestamp = "2025-03-26 09:15:23",
+            status = LogResults.SUCCESS
+        ),
+        ActivityLogs(
+            logId = 2,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Signal Check",
+            parameters = "RSSI: -45 dBm",
+            timestamp = "2025-03-26 09:10:12",
+            status = LogResults.SUCCESS
+        ),
+        ActivityLogs(
+            logId = 3,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Device Activation",
+            parameters = "Device: Thermostat, Action: Set 72°F",
+            timestamp = "2025-03-26 09:05:47",
+            status = LogResults.SUCCESS
+        ),
+        ActivityLogs(
+            logId = 4,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Connection Attempt",
+            parameters = "Target: Mobile App",
+            timestamp = "2025-03-26 09:00:19",
+            status = LogResults.FAILURE
+        ),
+        ActivityLogs(
+            logId = 5,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Message Sent",
+            parameters = "Recipient: Admin, Msg: Status Update",
+            timestamp = "2025-03-26 08:55:33",
+            status = LogResults.SUCCESS
+        ),
+        ActivityLogs(
+            logId = 6,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Device Deactivation",
+            parameters = "Device: Lights, Action: Off",
+            timestamp = "2025-03-26 08:50:01",
+            status = LogResults.SUCCESS
+        ),
+        ActivityLogs(
+            logId = 7,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Signal Check",
+            parameters = "RSSI: -60 dBm",
+            timestamp = "2025-03-26 08:45:22",
+            status = LogResults.FAILURE
+        ),
+        ActivityLogs(
+            logId = 8,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Firmware Update",
+            parameters = "Version: 1.2.3",
+            timestamp = "2025-03-26 08:40:15",
+            status = LogResults.SUCCESS
+        ),
+        ActivityLogs(
+            logId = 9,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Device Activation",
+            parameters = "Device: Fan, Action: On",
+            timestamp = "2025-03-26 08:35:09",
+            status = LogResults.SUCCESS
+        ),
+        ActivityLogs(
+            logId = 10,
+            beaconId = "HSNN-1234-ABCD-2345",
+            action = "Connection Attempt",
+            parameters = "Target: Server",
+            timestamp = "2025-03-26 08:30:44",
+            status = LogResults.FAILURE
+        )
+    )
     val beaconRssi = remember { mutableStateListOf<Float>() }
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
@@ -162,19 +252,20 @@ fun BeaconInfoScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(
-                        modifier = Modifier.padding(8.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text("${beacon.beaconName}'s Info")
-                    }
+                    Text(
+                        text = "${beacon.beaconName} Info",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.primary),
                 navigationIcon = {
-                    IconButton(onClick = {
-                        onBackClicked()
-                    }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = { onBackClicked() }) {
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
                     }
                 },
                 actions = {
@@ -193,69 +284,144 @@ fun BeaconInfoScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                Text(
-                    text = "Status: ${beacon.status}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(16.dp)
-                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Status: ${beacon.status}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
 
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            "Major: ${beacon.major}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            "Minor: ${beacon.minor}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
             }
 
             item {
-
-                Row(modifier = Modifier.padding(8.dp)) {
-                    ConnectivityGraph(beaconRssi)
-                }
-
-                Row(
-                    modifier = Modifier.padding(8.dp)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Column {
-
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            text = "Major: ${beacon.major}",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "Signal Strength Over Time",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
-                    }
 
-                    Column {
-                        Text(
-                            text = "Minor: ${beacon.minor}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        if (beaconRssi.isNotEmpty()) {
+                            ConnectivityGraph(beaconRssi)
+                        } else {
+                            Text(
+                                text = "No signal strength data available.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
                     }
                 }
             }
 
+
             item {
-                Text(
-                    text = "Activity Log",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-
-                AnimatedVisibility(visible = isExpanded) {
-                    ActivityLogsTable(beaconLogs = beaconLogs)
-                }
-
-                Button(
-                    onClick = { isExpanded = !isExpanded },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.secondary
-                    )
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = if (isExpanded) "Hide Logs" else "Show Logs",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(16.dp)
+                        text = "Activity Log",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+
+                    AnimatedVisibility(visible = isExpanded) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)) // adding a round corner to the table for design improvement
+                        ) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                item {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(MaterialTheme.colorScheme.primary)
+                                            .padding(vertical = 2.dp).border(1.dp, Color.Red),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        TableHeaderCell("Time", fraction = 0.33f)
+                                        TableHeaderCell("Action", fraction = 0.33f)
+                                     //   TableHeaderCell("Params", fraction = 0.40f)
+                                        TableHeaderCell("Status", fraction = 0.33f)
+                                    }
+                                }
+
+                                //TODO think about .takeLast(10)
+                                items(beaconLogs.take(10)) { log ->
+                                    TableRow(log = log)
+                                }
+                            }
+                        }
+//                        ActivityLogsTable(beaconLogs = beaconLogs)
+                    }
+                    Button(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = ButtonDefaults.elevatedButtonElevation(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+                        Text(if (isExpanded) "Hide Logs" else "Show Logs")
+                    }
                 }
+
+
             }
 
             item {
                 Button(
                     onClick = { onBackClicked() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.elevatedButtonElevation(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.secondary
@@ -276,8 +442,24 @@ fun BeaconInfoScreen(
 @Composable
 fun ConnectivityGraph(rssiValues: List<Float>) {
     if (rssiValues.isEmpty()) {
-        Text("No RSSI Data Available", color = Color.Red)
-        return
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Search, //TODO replace with a no signal icon
+                contentDescription = "No Signal",
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
+
+            Text(
+                text = "No signal strength data available",
+                color = MaterialTheme.colorScheme.secondary,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
     }
 
     // Converting the RSSI values to Points for the graph
@@ -336,139 +518,214 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
 }
 
 
-@Composable
-fun ActivityLogsTable(beaconLogs: MutableState<List<ActivityLogs>>) {
+//@Composable
+//fun ActivityLogsTable(beaconLogs: MutableState<List<ActivityLogs>>) {
+//
+//    //
+//    val logs =
+//        beaconLogs.value.takeLast(15) //Limiting the number of logs to 15 to not clutter the screen
+//
+//    //Dummy data for testing
+////    val logs = listOf(
+////        ActivityLogs(
+////            logId = 1,
+////            beaconId = "HSNN-1234-ABCD-2345",
+////            action = "Home Automation",
+////            parameters = "Device: Lights, Action: On",
+////            timestamp = "2024-12-30 14:35",
+////            status = LogResults.SUCCESS
+////        ),
+////        ActivityLogs(
+////            logId = 2,
+////            beaconId = "HSNN-1234-ABCD-2345",
+////            action = "Home Automation",
+////            parameters = "Device: Heater, Action: Off",
+////            timestamp = "2024-12-29 17:44",
+////            status = LogResults.SUCCESS
+////        ),
+////        ActivityLogs(
+////            logId = 3,
+////            beaconId = "HSNN-1234-ABCD-2345",
+////            action = "Home Automation",
+////            parameters = "Device: Lights, Action: On",
+////            timestamp = "2024-12-28 14:11",
+////            status = LogResults.SUCCESS
+////        ),
+////        ActivityLogs(
+////            logId = 4,
+////            beaconId = "HSNN-1234-ABCD-2345",
+////            action = "Home Automation",
+////            parameters = "Device: Lights, Action: On",
+////            timestamp = "2024-12-28 14:10",
+////            status = LogResults.FAILURE
+////        ),
+////        ActivityLogs(
+////            logId = 5,
+////            beaconId = "HSNN-1234-ABCD-2345",
+////            action = "Send Message",
+////            parameters = "Recipient: Dad",
+////            timestamp = "2024-12-28 14:10",
+////            status = LogResults.SUCCESS
+////        )
+////    )
+//
+//
+//    Column(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(16.dp)
+//    ) {
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .background(MaterialTheme.colorScheme.primary)
+//                .border(1.dp, Color.White)
+//                .padding(vertical = 8.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            TableHeaderCell("Timestamp")
+//            TableHeaderCell("Action")
+//            TableHeaderCell("Parameters")
+//            TableHeaderCell("Status")
+//        }
+//
+//        logs.forEach { log ->
+//            //TableRow(log = log)
+//        }
+//    }
+//
+//}
 
-    //
-    val logs = beaconLogs.value.takeLast(15) //Limiting the number of logs to 15 to not clutter the screen
-
-    //Dummy data for testing
-//    val logs = listOf(
-//        ActivityLogs(
-//            logId = 1,
-//            beaconId = "HSNN-1234-ABCD-2345",
-//            action = "Home Automation",
-//            parameters = "Device: Lights, Action: On",
-//            timestamp = "2024-12-30 14:35",
-//            status = LogResults.SUCCESS
-//        ),
-//        ActivityLogs(
-//            logId = 2,
-//            beaconId = "HSNN-1234-ABCD-2345",
-//            action = "Home Automation",
-//            parameters = "Device: Heater, Action: Off",
-//            timestamp = "2024-12-29 17:44",
-//            status = LogResults.SUCCESS
-//        ),
-//        ActivityLogs(
-//            logId = 3,
-//            beaconId = "HSNN-1234-ABCD-2345",
-//            action = "Home Automation",
-//            parameters = "Device: Lights, Action: On",
-//            timestamp = "2024-12-28 14:11",
-//            status = LogResults.SUCCESS
-//        ),
-//        ActivityLogs(
-//            logId = 4,
-//            beaconId = "HSNN-1234-ABCD-2345",
-//            action = "Home Automation",
-//            parameters = "Device: Lights, Action: On",
-//            timestamp = "2024-12-28 14:10",
-//            status = LogResults.FAILURE
-//        ),
-//        ActivityLogs(
-//            logId = 5,
-//            beaconId = "HSNN-1234-ABCD-2345",
-//            action = "Send Message",
-//            parameters = "Recipient: Dad",
-//            timestamp = "2024-12-28 14:10",
-//            status = LogResults.SUCCESS
-//        )
+//@Composable
+//fun TableHeaderCell(text: String) {
+//    Text(
+//        text = text,
+//        fontSize = 12.sp,
+//        fontWeight = FontWeight.Bold,
+//        color = Color.White,
+//        textAlign = TextAlign.Center,
+//        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
 //    )
+//}
 
 
-
-    Column(
+@Composable
+fun TableHeaderCell(
+    text: String,
+    fraction: Float = 1f
+) {
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+            .fillMaxWidth(fraction) // Allocate the fractional width
+            .padding(horizontal = 2.dp)
+            .border(1.dp, Color.White),
+        contentAlignment = Alignment.Center, // Center the content within the Box
     ) {
-        Row(
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            textAlign = TextAlign.Center, // Center the text within its bounds
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-                .border(1.dp, Color.White)
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            TableHeaderCell("Timestamp")
-            TableHeaderCell("Action")
-            TableHeaderCell("Parameters")
-            TableHeaderCell("Status")
-        }
-
-        logs.forEach { log ->
-            TableRow(log = log)
-        }
+                .background(MaterialTheme.colorScheme.primary) // Ensure the Text fills the Box
+        )
     }
-
-}
-
-@Composable
-fun TableHeaderCell(text: String) {
-    Text(
-        text = text,
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-        modifier = Modifier
-            .padding(8.dp)
-    )
 }
 
 @Composable
 fun TableRow(log: ActivityLogs) {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color.Black)
-            .background(MaterialTheme.colorScheme.background)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
+        TableCell(
             text = log.timestamp,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .weight(1f)
-                .padding(8.dp)
+            fraction = 0.33f,
+            maxLines = 2
         )
-        Text(
+        TableCell(
             text = log.action,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .weight(1f)
-                .padding(8.dp)
+            fraction = 0.33f,
+            maxLines = 1
         )
-        Text(
-            text = log.parameters,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .weight(1f)
-                .padding(8.dp)
-        )
-        Text(
+//        TableCell(
+//            text = log.parameters,
+//            fraction = 0.40f,
+//            maxLines = 2
+//        )
+        TableCell(
             text = log.status.name,
-            fontSize = 12.sp,
-            modifier = Modifier
-                .weight(1f)
-                .padding(8.dp),
-            color = if (log.status.name == LogResults.SUCCESS.name) Color.Green else Color.Red
+            color = if (log.status == LogResults.SUCCESS) Color.Green else Color.Red,
+            fraction = 0.33f,
+            maxLines = 1
         )
     }
+//    Row(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .border(1.dp, Color.Black)
+//            .background(MaterialTheme.colorScheme.background)
+//            .padding(vertical = 8.dp),
+//        horizontalArrangement = Arrangement.SpaceBetween,
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Text(
+//            text = log.timestamp,
+//            fontSize = 12.sp,
+//            modifier = Modifier
+//                .weight(1f)
+//                .padding(8.dp)
+//        )
+//        Text(
+//            text = log.action,
+//            fontSize = 12.sp,
+//            modifier = Modifier
+//                .weight(1f)
+//                .padding(8.dp)
+//        )
+//        Text(
+//            text = log.parameters,
+//            fontSize = 12.sp,
+//            modifier = Modifier
+//                .weight(1f)
+//                .padding(8.dp)
+//        )
+//        Text(
+//            text = log.status.name,
+//            fontSize = 12.sp,
+//            modifier = Modifier
+//                .weight(1f)
+//                .padding(8.dp),
+//            color = if (log.status.name == LogResults.SUCCESS.name) Color.Green else Color.Red
+//        )
+//    }
 }
 
+@Composable
+fun TableCell(
+    text: String,
+    color: Color = MaterialTheme.colorScheme.secondary,
+    maxLines: Int = 1,
+    fraction: Float = 1f
+) {
+    Text(
+        text = text,
+        fontSize = 11.sp,
+        color = color,
+        modifier = Modifier
+            .fillMaxWidth(fraction)
+            .padding(horizontal = 2.dp, vertical = 0.dp),
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+
+    )
+}
 
 @Preview
 @Composable

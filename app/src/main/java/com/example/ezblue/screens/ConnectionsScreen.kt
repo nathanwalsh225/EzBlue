@@ -7,18 +7,29 @@ import android.bluetooth.le.ScanResult
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -88,19 +99,19 @@ fun ConnectionsScreen(
     }
 
     val testBeacon = Beacon(
-            beaconId = "beacon2",
-            beaconName = "Car Beacon",
-            role = "Automated Messaging",
-            uuid = "12345678-1234-5678-1234-123456789def",
-            major = 1,
-            minor = 2,
-            signalStrength = -70,
-            isConnected = true,
-            createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-11T12:00:00Z"),
-            ownerId = "user1",
-            lastDetected = null,
-            beaconNote = null
-        )
+        beaconId = "beacon2",
+        beaconName = "Car Beacon",
+        role = "Automated Messaging",
+        uuid = "12345678-1234-5678-1234-123456789def",
+        major = 1,
+        minor = 2,
+        signalStrength = -70,
+        isConnected = true,
+        createdAt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse("2021-09-11T12:00:00Z"),
+        ownerId = "user1",
+        lastDetected = null,
+        beaconNote = null
+    )
 
     DisposableEffect(Unit) {
         onDispose {
@@ -123,44 +134,60 @@ fun ConnectionsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = if (scanning.value) "Scanning..." else "Connect to a Beacon",
-                style = MaterialTheme.typography.headlineMedium
+                text = if (scanning.value) "Scanning for Beacons..." else "Connect to a Beacon",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(16.dp)
             )
 
-            if (!scanning.value) {
-                IconButton(onClick = {
-                    if (bluetoothAdapter?.isEnabled == true) {
-                        //starting the bluetooth scan
-                        bluetoothLeScanner?.startScan(scanCallback)
-                        Log.d("ConnectionsViewModel", "Scan started")
-                        scanning.value = true;
+            Button(
+                onClick = {
+                    if (scanning.value) {
+                        bluetoothLeScanner?.stopScan(scanCallback)
+                        scanning.value = false
                     } else {
-                        Log.d("ConnectionsViewModel", "Bluetooth Scanning not enabled")
+                        bluetoothLeScanner?.startScan(scanCallback)
+                        scanning.value = true
                     }
-                }) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                }
-            } else {
-                IconButton(onClick = {
-                    //stopping the scan
-                    bluetoothLeScanner?.stopScan(scanCallback)
-                    Log.d("ConnectionsViewModel", "Scan stopped")
-                    scanning.value = false;
-                }) {
-                    Icon(Icons.Default.Clear, contentDescription = "Stop")
-                }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Icon(
+                    imageVector = if (scanning.value) Icons.Default.Clear else Icons.Default.Refresh,
+                    contentDescription = if (scanning.value) "Stop Scan" else "Start Scan",
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (scanning.value) "Stop Scan" else "Start Scan")
             }
         }
 
+
         if (scannedBeacons.isEmpty() && !scanning.value) {
-            //some text to just inform the user to start scanning
-            Text(
-                text = "No devices found. Try scanning again.",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                textAlign = TextAlign.Center
-            )
+            //Informing the user to begin a scan
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search, //TODO REPLACE WITH BLUETOOTH ICON
+                    contentDescription = "No Beacons",
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "No beacons detected.",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
             BeaconRow( //Test beacon used only for checking functionally while using the emulator, will be removed eventually
                 beacon = testBeacon,
                 onConnectClick = {
@@ -169,18 +196,26 @@ fun ConnectionsScreen(
             )
 
         } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                elevation = CardDefaults.cardElevation(8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                items(scannedBeacons) { beacon ->
-                    BeaconRow(
-                        beacon = beacon,
-                        onConnectClick = {
-                            onConnectClick(beacon)
-                        }
-                    )
+                LazyColumn(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(scannedBeacons) { beacon ->
+                        BeaconRow(
+                            beacon = beacon,
+                            onConnectClick = {
+                                onConnectClick(beacon)
+                            }
+                        )
+                    }
                 }
-
             }
         }
     }
@@ -206,31 +241,46 @@ fun BeaconRow(beacon: Beacon, onConnectClick: () -> Unit) {
         else -> BeaconStatus.AVAILABLE
     }
 
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(text = beacon.beaconName, style = MaterialTheme.typography.bodyLarge)
-            Text(text = beacon.status.name, style = MaterialTheme.typography.bodySmall)
-            Text(
-                text = "Strength: ${beacon.signalStrength} dBm ($signalDescription)",
-                style = MaterialTheme.typography.bodySmall,
-                color = signalColor
-            )
-        }
-        Button(
-            onClick = onConnectClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.secondary
-            ),
-            enabled = beacon.status != BeaconStatus.CONNECTED && beacon.status != BeaconStatus.UNAVAILABLE && beacon.signalStrength > -85
+        Box(
+            contentAlignment = Alignment.Center
         ) {
-            Text("Connect")
+            Column {
+                Text(
+                    text = beacon.beaconName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                Text(
+                    text = "Status: ${beacon.status.name}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                Text(
+                    text = "Signal: ${beacon.signalStrength} dBm ($signalDescription)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = signalColor
+                )
+
+                Button(
+                    onClick = onConnectClick,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    ),
+                    enabled = beacon.status != BeaconStatus.CONNECTED && beacon.status != BeaconStatus.UNAVAILABLE && beacon.signalStrength > -85
+                ) {
+                    Text("Connect")
+                }
+            }
         }
     }
 }

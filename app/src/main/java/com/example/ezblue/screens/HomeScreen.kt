@@ -8,27 +8,37 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +50,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -89,7 +101,8 @@ fun HomeScreen(
         //It was scanning way too fast so beacon actions were being performed multiple times and logs were being duplicated as a result
         //I had to implement a debounce system to prevent the scan from happening too often
         //Inspiration from ChatGpt
-        private val lastExecutionTimeMap = mutableMapOf<String, Long>() //map to keep track of the last time a beacon was scanned
+        private val lastExecutionTimeMap =
+            mutableMapOf<String, Long>() //map to keep track of the last time a beacon was scanned
         private val debounceTimeMillis = 5000L // 5 seconds
 
         @SuppressLint("MissingPermission")
@@ -102,7 +115,8 @@ fun HomeScreen(
                     smoothRssi(rssi) //attempting to round the RSSI every few seconds to reduce the sparatic RSSI jumps
 
                 val currentTime = System.currentTimeMillis()
-                val lastExecutionTime = lastExecutionTimeMap[device.address] ?: 0 //Gets the last time the beacon was scanned
+                val lastExecutionTime = lastExecutionTimeMap[device.address]
+                    ?: 0 //Gets the last time the beacon was scanned
 
                 connectedBeacons = connectedBeacons.map { beacon ->
                     if (beacon.beaconId == device.address) { //mapping the connected beacons to the scanned beacons to compare mac addresses
@@ -181,35 +195,42 @@ fun HomeScreen(
     MainScreenWithSideBar(
         navController = navController,
         currentRoute = "home",
-        onContactUsClick = {},
+        onContactUsClick = { navController.navigate("contactUs") },
         onAccountSettingsClick = {},
         onSettingsClick = {},
         onLogoutClick = onLogoutClick
     ) {
-//
-//        if (connectedBeacons == null) {
-//            Box (
-//                modifier = Modifier.fillMaxSize(),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                CircularProgressIndicator(
-//                    modifier = Modifier.width(25.dp),
-//                    color = MaterialTheme.colorScheme.primary,
-//                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-//                )
-//            }
-//        } else
+
         if (connectedBeacons.isEmpty()) {
-            Box(
+            Column(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Icon(
+                    imageVector = Icons.Filled.Search, //TODO replace with bluetooth icon
+                    contentDescription = "No Beacons",
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
                     text = "No Beacons Connected",
                     style = MaterialTheme.typography.headlineSmall.copy(
                         color = MaterialTheme.colorScheme.secondary
                     )
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { /* Navigate to beacon scan */ },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Scan for Beacons", color = MaterialTheme.colorScheme.secondary)
+                }
             }
         } else {
             LazyColumn(
@@ -248,14 +269,14 @@ fun BeaconCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.secondary
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
         border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
             //TASK TITLE AND EXPAND/COLLAPSE BUTTON
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -269,22 +290,36 @@ fun BeaconCard(
                         )
                     )
 
-//                    Text(
-//                        text = beacon.configuration?.visibility!!.name,
-//                        style = MaterialTheme.typography.bodyMedium.copy(
-//                                color = MaterialTheme.colorScheme.secondary
-//                            )
-//                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline
+                    )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Column {
-                        Text(
-                            text = if (beacon.signalStrength >= -90) "Strength: ${beacon.signalStrength} dBm" else "Beacon Unavailable",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.secondary
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (beacon.signalStrength >= -90) "${beacon.signalStrength} dBm" else "Beacon Unavailable",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
                             )
-                        )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            LinearProgressIndicator(
+                                progress = {
+                                    (beacon.signalStrength + 100) / 60f // Normalize RSSI to a 0-1 scale
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp),
+                                color = if (beacon.signalStrength > -70) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
+                            )
+                        }
 
                         Text(
                             text = "Role: ${beacon.role}",
@@ -295,16 +330,34 @@ fun BeaconCard(
                     }
                 }
 
-                IconButton(
-                    onClick = { isExpanded = !isExpanded }
+                Box( //TODO why is this invisible?
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(Color.Red)
                 ) {
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (isExpanded) "Collapse" else "Expand"
-                    )
+                    IconButton(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier.padding(8.dp)
+                            .size(24.dp),
+//                    colors = IconButtonDefaults.iconButtonColors(
+//                        containerColor = MaterialTheme.colorScheme.secondary,
+//                        contentColor = MaterialTheme.colorScheme.secondary,
+//                        disabledContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
+//                        disabledContentColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.38f)
+//                    )
+                    ) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+//                            modifier = Modifier
+//                                .rotate(if (isExpanded) 180f else 0f)
+//                                .animateContentSize(),
+                            tint = MaterialTheme.colorScheme.secondary.copy(alpha = 1f) // Force full visibility,
+
+                        )
+                    }
                 }
             }
-
 
 
             AnimatedVisibility(visible = isExpanded) {
@@ -340,23 +393,29 @@ fun BeaconCard(
                             verticalAlignment = Alignment.Bottom
                         ) {
                             Button(
-                                onClick = { /*//TODO*/ },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
+                                onClick = { /*TODO*/ },
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.secondary
+                                ),
+                                shape = RoundedCornerShape(8.dp), // Softer edges
+                                elevation = ButtonDefaults.elevatedButtonElevation()
                             ) {
-                                Text(
-                                    text = "Configure",
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
+                                Text("Configure")
                             }
 
                             Button(
                                 onClick = { onNavigateToBeaconInfoScreen(beacon) },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.background)
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.secondary
+                                ),
+                                shape = RoundedCornerShape(8.dp), // Softer edges
+                                elevation = ButtonDefaults.elevatedButtonElevation()
                             ) {
-                                Text(
-                                    text = "More Info",
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
+                                Text("More Info")
                             }
 
                         }

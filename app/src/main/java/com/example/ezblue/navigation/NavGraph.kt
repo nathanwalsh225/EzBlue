@@ -13,6 +13,7 @@ import com.example.ezblue.screens.AutomatedMessagingSetupScreen
 import com.example.ezblue.screens.BeaconConnectionScreen
 import com.example.ezblue.screens.BeaconInfoScreen
 import com.example.ezblue.screens.ConnectionsScreen
+import com.example.ezblue.screens.ContactUsScreen
 import com.example.ezblue.screens.HomeScreen
 import com.example.ezblue.screens.LoginScreen
 import com.example.ezblue.screens.RegisterScreen
@@ -93,6 +94,15 @@ fun NavGraph(
             )
         }
 
+        composable("contactUs") {
+            ContactUsScreen(
+                navController = navController,
+                onBackClicked = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
         composable("beaconConnectionScreen") {
 
             val beacon =
@@ -118,7 +128,10 @@ fun NavGraph(
                 onNextClicked = { configuredBeacon ->
                     //Automated Messaging Setup Screen
                     if (configuredBeacon.major == 2) {
-                        navController.currentBackStackEntry?.savedStateHandle?.set("beacon", configuredBeacon)
+                        navController.currentBackStackEntry?.savedStateHandle?.set(
+                            "beacon",
+                            configuredBeacon
+                        )
                         navController.navigate("AutomatedMessagingSetupScreen")
                     }
 
