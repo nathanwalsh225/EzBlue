@@ -1,5 +1,6 @@
 package com.example.ezblue.navigation
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,8 +18,10 @@ import com.example.ezblue.screens.ContactUsScreen
 import com.example.ezblue.screens.HomeScreen
 import com.example.ezblue.screens.LoginScreen
 import com.example.ezblue.screens.RegisterScreen
+import com.example.ezblue.screens.SetRemindersSetupScreen
 import com.google.firebase.auth.FirebaseAuth
 
+@SuppressLint("NewApi")
 @Composable
 fun NavGraph(
     navController: NavHostController
@@ -113,9 +116,10 @@ fun NavGraph(
 
             val beacon =
                 navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
-            val update =
-                navController.previousBackStackEntry?.savedStateHandle?.get<Boolean>("update")
+//            val update =
+//                navController.previousBackStackEntry?.savedStateHandle?.get<Boolean>("update")
 
+            Log.d("NavGraph", "Beacon Connection Screen $beacon")
 
             LaunchedEffect(Unit) {
                 if (beacon == null) {
@@ -125,6 +129,7 @@ fun NavGraph(
                 }
             }
 
+            Log.d("NavGraph", "Tryuna connect")
             BeaconConnectionScreen(
                 navController = navController,
                 onBackClicked = {
@@ -134,21 +139,28 @@ fun NavGraph(
                 },
                 beacon = beacon!!,
                 onNextClicked = { configuredBeacon ->
-                    //Automated Messaging Setup Screen
-                    if (configuredBeacon.major == 2) {
-                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                            "beacon",
-                            configuredBeacon
-                        )
-                        if (update == true) {
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "update",
-                                true
-                            )
-                        }
-                        navController.navigate("AutomatedMessagingSetupScreen")
-                    }
+                    navController.currentBackStackEntry?.savedStateHandle?.set(
+                        "beacon",
+                        configuredBeacon
+                    )
+//                    if (update == true) {
+//                        navController.currentBackStackEntry?.savedStateHandle?.set(
+//                            "update",
+//                            true
+//                        )
+//                    }
 
+                    when (configuredBeacon.major) {
+                        2 -> {
+                            Log.d("NavGraph", "Beacon Major 2")
+                            //Automated Messaging Setup Screen
+                            navController.navigate("AutomatedMessagingSetupScreen")
+                        }
+
+                        3 -> {
+                            navController.navigate("SetRemindersSetupScreen")
+                        }
+                    }
                 },
             )
         }
@@ -190,6 +202,24 @@ fun NavGraph(
                 onAutomatedMessagingSetupSuccess = {
                     navController.navigate("home") {
                         popUpTo("AutomatedMessagingSetupScreen") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("SetRemindersSetupScreen") {
+            val beacon =
+                navController.previousBackStackEntry?.savedStateHandle?.get<Beacon>("beacon")
+
+            SetRemindersSetupScreen (
+                navController = navController,
+                onBackClicked = {
+                    navController.popBackStack()
+                },
+                beacon = beacon!!,
+                onSetRemindersComplete = {
+                    navController.navigate("home") {
+                        popUpTo("SetRemindersSetupScreen") { inclusive = true }
                     }
                 }
             )

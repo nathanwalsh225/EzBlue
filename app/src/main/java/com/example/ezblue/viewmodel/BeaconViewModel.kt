@@ -142,29 +142,53 @@ class BeaconViewModel @Inject constructor(
     ) {
         Log.d("TestingStuff", "Updating Beacon: $beacon")
 
-        beaconRepository.updateBeacon(
-            beacon = beacon,
-            onSuccess = {
-                Log.d("TestingStuff", "BeaconU Updated")
-            },
-            onError = { e ->
-                onFailure("Failed to update beacon - Error: $e")
-            }
-        )
+        try {
+            beaconRepository.updateBeacon(
+                beacon = beacon,
+                onSuccess = {
+                    updateConfigurations(
+                        beacon,
+                        parameters,
+                        onSuccess = {
+                            Log.d("TestingStuff", "Beacon Updated")
+                            onSuccess()
+                        },
+                        onFailure = { e ->
+                            onFailure("Failed to update beacon - Error: $e")
+                        }
+                    )
+                },
+                onError = { e ->
+                    onFailure("Failed to update beacon - Error: $e")
+                }
+            )
 
+
+        } catch (e: Error) {
+            Log.e("TestingStuff", "There was an error Updating the beacon: ${e.message}")
+            onFailure("Failed to update beacon - Error: $e")
+        }
+    }
+
+    private fun updateConfigurations(
+        beacon: Beacon,
+        parameters: Map<String, String>,
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
         configurationsRepository.updateConfiguration(
             userId = FirebaseAuth.getInstance().currentUser!!.uid,
             beaconId = beacon.beaconId,
             parameters = parameters,
             visibility = if (beacon.role == "Open Links") Visibility.PUBLIC.name else Visibility.PRIVATE.name,
             onSuccess = {
+                onSuccess()
                 Log.d("TestingStuff", "Configuration Updated")
             },
             onError = { e ->
                 onFailure("Failed to update configuration - Error: $e")
             }
         )
-
     }
 
     @SuppressLint("MissingPermission")
