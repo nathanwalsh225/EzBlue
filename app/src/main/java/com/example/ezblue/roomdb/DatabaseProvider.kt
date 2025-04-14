@@ -12,7 +12,7 @@ object DatabaseProvider {
     fun getRoomDatabase(context: Context): AppDatabase {
 
 
-        context.deleteDatabase("ezblue-db")
+        //context.deleteDatabase("ezblue-db")
 
 
         if (INSTANCE == null) {

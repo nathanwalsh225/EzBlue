@@ -64,6 +64,7 @@ import com.example.ezblue.roomdb.DatabaseProvider
 import com.example.ezblue.viewmodel.BeaconViewModel
 import com.example.ezblue.viewmodel.TaskViewModel
 import com.example.ezblue.viewmodel.UserViewModel
+import kotlinx.coroutines.Delay
 import kotlinx.coroutines.delay
 
 @SuppressLint("MissingPermission")
@@ -112,6 +113,8 @@ fun HomeScreen(
                 val device = result.device
                 val rssi = result.rssi
 
+                Log.d("ConnectionsViewModel", "Scan result: ${device.address} - RSSI: $rssi")
+
                 val smoothedRssi =
                     smoothRssi(rssi) //attempting to round the RSSI every few seconds to reduce the sparatic RSSI jumps
 
@@ -126,11 +129,12 @@ fun HomeScreen(
                             lastExecutionTimeMap[device.address] = currentTime
 
                             if (beacon.configuration != null) { //Prevent null crashes, dont do any task until configurations have been loaded
+
                                 taskViewModel.handleBeaconTask(
                                     beacon = beacon,
                                     context = context,
                                     onSuccess = {
-
+                                        //TODO maybe toss in a confirmation message like a toast
                                     },
                                     onError = {
 

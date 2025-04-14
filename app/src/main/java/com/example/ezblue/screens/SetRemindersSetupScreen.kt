@@ -3,6 +3,7 @@ package com.example.ezblue.screens
 import android.Manifest
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -41,6 +42,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextAlign
@@ -65,6 +69,9 @@ import com.example.ezblue.viewmodel.BeaconViewModel
 import com.example.ezblue.viewmodel.TaskViewModel
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -82,13 +89,14 @@ fun SetRemindersSetupScreen(
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val update = remember { mutableStateOf(false) }
     val permissionGranted = remember { mutableStateOf(false) }
     val requestPermission = remember { mutableStateOf(false) }
-    val showCustomTimePicker = remember { mutableStateOf(false) }
+    val onNextClicked = remember { mutableStateOf(false) }
     val reminderMsg = remember { mutableStateOf("") }
-    var reminderInterval = remember { mutableIntStateOf(0) }
-    var customStartTime = remember { mutableStateOf<LocalTime?>(null) }
-    var customEndTime = remember { mutableStateOf<LocalTime?>(null) }
+    val reminderInterval = remember { mutableIntStateOf(0) }
+    val customStartTime = remember { mutableStateOf<LocalTime?>(null) }
+    val customEndTime = remember { mutableStateOf<LocalTime?>(null) }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -130,6 +138,13 @@ fun SetRemindersSetupScreen(
     }
 
 
+    LaunchedEffect(Unit) {
+        Log.d("TestingStuff", "${update.value}")
+        update.value = beaconViewModel.isBeaconConnected(beacon.beaconId)
+
+        Log.d("TestingStuff", "${update.value}")
+    }
+
 
     Scaffold(
         topBar = {
@@ -157,253 +172,420 @@ fun SetRemindersSetupScreen(
                 )
         }
     ) { paddingValues ->
-
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        focusManager.clearFocus()
-                    })
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            LazyColumn(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        if (!onNextClicked.value) {
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = {
+                            focusManager.clearFocus()
+                        })
+                    },
+                contentAlignment = Alignment.Center
             ) {
+                LazyColumn(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
-                item {
-                    Text(
-                        text = "Lets set up your reminders",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.fillMaxSize()
-                            .padding(top = 8.dp)
-                    )
-
-                    Text(
-                        text = "This will allow you to set up reminders for your beacon",
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.fillMaxSize()
-                            .padding(top = 8.dp)
-                    )
-                }
-
-                item {
-                    Spacer(modifier = Modifier.size(16.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                    ) {
+                    item {
                         Text(
-                            text = "Message",
-                            style = MaterialTheme.typography.titleSmall
+                            text = "Lets set up your reminders",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 4.dp)
                         )
                     }
 
-                    OutlinedTextField(
-                        value = reminderMsg.value,
-                        onValueChange = { reminderMsg.value = it },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(vertical = 8.dp)
-                            .height(50.dp),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            focusedTextColor = MaterialTheme.colorScheme.secondary,
-                            unfocusedTextColor = MaterialTheme.colorScheme.secondary,
-                            focusedBorderColor = MaterialTheme.colorScheme.secondary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.secondary
-                        )
-                    )
-                }
+                    item {
+                        Spacer(modifier = Modifier.size(16.dp))
 
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-
-                        Text(
-                            text = "Select how often you want this reminder to take place",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.fillMaxSize()
-                                .align(Alignment.CenterHorizontally)
-                                .padding(top = 8.dp)
-                        )
-                        //https://developer.android.com/reference/kotlin/androidx/compose/foundation/layout/FlowRowScope
-                        FlowRow(
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(8.dp),
-                            maxItemsInEachRow = 4,
-                            verticalArrangement = Arrangement.Center,
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                                .padding(top = 8.dp),
                         ) {
-                            listOf(
-                                1 to "15 Minutes",
-                                2 to "30 Minutes",
-                                3 to "Hourly",
-                                4 to "Once a Day",
-                                5 to "Custom *WIP*"
-                            ).forEach { (value, label) ->
-                                Button(
-                                    onClick = {
-                                        reminderInterval.intValue = value
+                            Text(
+                                text = "Message",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
 
-                                        if (reminderInterval.intValue == 5) {
-                                            showCustomTimePicker.value = true
-                                        } else {
-                                            showCustomTimePicker.value = false
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (reminderInterval.intValue == value)
-                                            Color.DarkGray
-                                        else
-                                            MaterialTheme.colorScheme.primary
-                                    ),
-                                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(75.dp)
-                                        .padding(4.dp),
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        label,
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        maxLines = 2,
-                                        textAlign = TextAlign.Center
-                                    )
+                        OutlinedTextField(
+                            value = reminderMsg.value,
+                            onValueChange = { reminderMsg.value = it },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(vertical = 8.dp)
+                                .height(50.dp),
+                            colors = TextFieldDefaults.outlinedTextFieldColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                focusedTextColor = MaterialTheme.colorScheme.secondary,
+                                unfocusedTextColor = MaterialTheme.colorScheme.secondary,
+                                focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    }
+
+                    item {
+                        Column(
+                            verticalArrangement = Arrangement.SpaceEvenly,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+
+                            Text(
+                                text = "Select how often you want this reminder to take place",
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(top = 8.dp)
+                            )
+
+                            //https://developer.android.com/reference/kotlin/androidx/compose/foundation/layout/FlowRowScope
+                            FlowRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                maxItemsInEachRow = 4,
+                                verticalArrangement = Arrangement.Center,
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                listOf(
+                                    1 to "15 Minutes",
+                                    2 to "30 Minutes",
+                                    3 to "Hourly",
+                                    4 to "Every 6 Hours",
+                                    5 to "Once a Day"
+                                ).forEach { (value, label) ->
+
+                                    Button(
+                                        onClick = {
+                                            reminderInterval.intValue = value
+
+                                            //showCustomTimePicker.value = reminderInterval.intValue == 5
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (reminderInterval.intValue == value)
+                                                Color.DarkGray
+                                            else
+                                                MaterialTheme.colorScheme.primary
+                                        ),
+                                        border = BorderStroke(
+                                            2.dp,
+                                            MaterialTheme.colorScheme.secondary
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(75.dp)
+                                            .padding(4.dp),
+                                        shape = MaterialTheme.shapes.small
+                                    ) {
+                                        Text(
+                                            label,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            maxLines = 2,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                item {
-                    if (showCustomTimePicker.value) {
-                        CustomTimePicker(
-                            onStartTimeSelected = { selectedTime ->
-                                Log.d("Reminders", "Start Time: $selectedTime")
-                                customStartTime.value = selectedTime
-                            },
-                            onEndTimeSelected = { selectedTime ->
-                                Log.d("Reminders", "End Time: $selectedTime")
-                                customEndTime.value = selectedTime
-                            }
+                    item {
+
+                        Text(
+                            text = "Between what times do you want this reminder to activate",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 8.dp)
                         )
+
+                        TimeIntervalPicker(
+                            startTime = customStartTime.value,
+                            endTime = customEndTime.value,
+                            onStartSelected = { customStartTime.value = it },
+                            onEndSelected = { customEndTime.value = it }
+                        )
+
                     }
-                }
 
 
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        OutlinedButton(
-                            onClick = { onBackClicked() },
+                    item {
+                        Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.secondary
-                            ),
-                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
-                            shape = MaterialTheme.shapes.medium
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
                         ) {
-                            Text(
-                                text = "Back",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
+                            OutlinedButton(
+                                onClick = { onBackClicked() },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.secondary
+                                ),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Text(
+                                    text = "Back",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
 
-                        OutlinedButton(
-                            onClick = {
-//                                onNextClicked.value = !onNextClicked.value
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.secondary
-                            ),
-                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
-                            shape = MaterialTheme.shapes.medium,
-                        ) {
-                            Text(
-                                text = "Next",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                            OutlinedButton(
+                                onClick = {
+                                    //TODO
+                                    //SETUP SEEMS TO BE GOOD, JUST NEED TO ADD CONFIRMATIONS SCREEN THEN SAVE TASK
+                                    onNextClicked.value = !onNextClicked.value
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 8.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.secondary
+                                ),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                Text(
+                                    text = "Next",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
                         }
                     }
-                }
 
+                }
             }
+        } else {
+            ShowConfirmationScreen(beacon, customStartTime, customEndTime, reminderMsg, reminderInterval,
+                onBackClicked = {
+                    onNextClicked.value = !onNextClicked.value
+                },
+                onSaveClicked = {
+                    //TODO
+                    //Save the task to the database
+                    try {
+                        if (update.value) {
+
+                        } else {
+                            beaconViewModel.connectToBeacon(
+                                beacon = beacon,
+                                context = context,
+                                parameters = mapOf(
+                                    "reminderMsg" to reminderMsg.value,
+                                    "msgInterval" to reminderInterval.intValue.toString(),
+                                    "startTime" to customStartTime.value.toString(),
+                                    "endTime" to customEndTime.value.toString()
+                                ),
+                                onSuccess = {
+                                    onSetRemindersComplete()
+                                },
+                                onFailure = { error ->
+
+                                }
+                            )
+                        }
+
+
+                    } catch (e: Exception) {
+                        Log.e("SetRemindersSetupScreen", "Error during setup: ${e.message}")
+                    }
+                    Log.d("SetRemindersSetupScreen", "Beacon saved to database: $beacon")
+                    onSetRemindersComplete()
+                }
+            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomTimePicker(
-    onStartTimeSelected: (LocalTime) -> Unit,
-    onEndTimeSelected: (LocalTime) -> Unit
+fun TimeIntervalPicker(
+    startTime: LocalTime?,
+    endTime: LocalTime?,
+    onStartSelected: (LocalTime) -> Unit,
+    onEndSelected: (LocalTime) -> Unit
 ) {
-    var startTime by remember { mutableStateOf<LocalTime?>(null) }
-    var endTime by remember { mutableStateOf<LocalTime?>(null) }
+    val startDialog = rememberMaterialDialogState()
+    val endDialog = rememberMaterialDialogState()
+
+    val formatter = DateTimeFormatter.ofPattern("HH:mm")
 
     Column {
-        TimePickerButton("Start", startTime) { selectedTime -> startTime = selectedTime }
-        Spacer(modifier = Modifier.height(8.dp))
-        TimePickerButton("End", endTime) { selectedTime -> endTime = selectedTime }
+        Button(onClick = { startDialog.show() }) {
+            Text("Start: ${startTime?.format(formatter) ?: "--:--"}")
+        }
+
+        Button(onClick = { endDialog.show() }) {
+            Text("End: ${endTime?.format(formatter) ?: "--:--"}")
+        }
     }
 
+    MaterialDialog(dialogState = startDialog, buttons = {
+        positiveButton("OK")
+        negativeButton("Cancel")
+    }) {
+        timepicker(initialTime = startTime ?: LocalTime.NOON) { time ->
+            onStartSelected(time)
+        }
+    }
+
+    MaterialDialog(dialogState = endDialog, buttons = {
+        positiveButton("OK")
+        negativeButton("Cancel")
+    }) {
+        timepicker(initialTime = endTime ?: LocalTime.NOON) { time ->
+            onEndSelected(time)
+        }
+    }
 }
 
 @Composable
-fun TimePickerButton(
-    label: String,
-    time: LocalTime?,
-    onTimeSelected: (LocalTime) -> Unit
+fun ShowConfirmationScreen(
+    beacon: Beacon,
+    customStartTime: MutableState<LocalTime?>,
+    customEndTime: MutableState<LocalTime?>,
+    reminderMsg: MutableState<String>,
+    reminderInterval: MutableIntState,
+    onBackClicked: () -> Unit,
+    onSaveClicked: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val timePicker = remember { mutableStateOf<MaterialTimePicker?>(null) }
 
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    val focusManager = LocalFocusManager.current
 
-    Button(onClick = {
-        Log.d("Reminders", "Button clicked for $label")
-        val picker = MaterialTimePicker.Builder()
-            .setTimeFormat(TimeFormat.CLOCK_24H)
-            .setHour(time?.hour ?: 12)
-            .setMinute(time?.minute ?: 0)
-            .setTitleText("Select $label Time")
-            .build()
 
-        picker.addOnPositiveButtonClickListener {
-            val selected = LocalTime.of(picker.hour, picker.minute)
-            onTimeSelected(selected)
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            },
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            Text(text = "Selected Contact:")
+
+            Text(text = "Reminder Message: ${reminderMsg.value}")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(text = "Between: ${customStartTime.value} - ${customEndTime.value}")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(text = "Message occurs every")
+
+            when (reminderInterval.intValue) {
+                1 -> {
+                    Text(text = "15 minutes")
+                }
+                2 -> {
+                    Text(text = "30 minutes")
+                }
+                3 -> {
+                    Text(text = "Hourly")
+                }
+                4 -> {
+                    Text(text = "Every 6 hours")
+                }
+                5 -> {
+                    Text(text = "Once a day")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = {
+
+//                    taskViewModel.sendMessage(
+//                        beacon = beacon,
+//                        onSuccess = {
+//                            Toast.makeText(context, "Message Sent", Toast.LENGTH_LONG)
+//                                .show()
+//                            //onAutomatedMessagingSetupSuccess()
+//                        },
+//                        onError = {
+//                            Toast.makeText(context, "Error sending message", Toast.LENGTH_LONG)
+//                                .show()
+//                        },
+//                        context = context
+//                    )
+                },
+                modifier = Modifier
+                    .padding(end = 8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.secondary
+                ),
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(
+                    text = "Test Reminder",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
         }
 
-        val activity = context as? FragmentActivity
-        Log.d("Reminders", "Context is: ${context::class.java.name}")
-        activity?.supportFragmentManager?.let {
-            picker.show(it, "TIME_PICKER_$label")
-        }
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                OutlinedButton(
+                    onClick = { onBackClicked() },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    ),
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(
+                        text = "Back",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
 
-        timePicker.value = picker
-    }) {
-        Text("$label: ${time?.format(timeFormatter) ?: "--:--"}")
+                OutlinedButton(
+                    onClick = {
+                        onSaveClicked()
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    ),
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(
+                        text = "Save",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
     }
 }

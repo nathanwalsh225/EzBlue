@@ -102,49 +102,49 @@ fun BeaconInfoScreen(
 ) {
     val openDeleteDialog = remember { mutableStateOf(false) }
     var isExpanded by remember { mutableStateOf(false) }
-    //val beaconLogs = beaconViewModel.beaconLogs
-    val beaconLogs = listOf(
-        ActivityLogs(
-            logId = 1,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Device Activation",
-            parameters = "Device: Lights, Action: On",
-            timestamp = "2025-03-26 09:15:23",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 2,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Signal Check",
-            parameters = "RSSI: -45 dBm",
-            timestamp = "2025-03-26 09:10:12",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 3,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Device Activation",
-            parameters = "Device: Thermostat, Action: Set 72°F",
-            timestamp = "2025-03-26 09:05:47",
-            status = LogResults.SUCCESS
-        ),
-        ActivityLogs(
-            logId = 4,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Connection Attempt",
-            parameters = "Target: Mobile App",
-            timestamp = "2025-03-26 09:00:19",
-            status = LogResults.FAILURE
-        ),
-        ActivityLogs(
-            logId = 5,
-            beaconId = "HSNN-1234-ABCD-2345",
-            action = "Message Sent",
-            parameters = "Recipient: Admin, Msg: Status Update",
-            timestamp = "2025-03-26 08:55:33",
-            status = LogResults.SUCCESS
-        )
-    )
+    val beaconLogs = beaconViewModel.beaconLogs
+//    val beaconLogs = listOf(
+//        ActivityLogs(
+//            logId = 1,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Device Activation",
+//            parameters = "Device: Lights, Action: On",
+//            timestamp = "2025-03-26 09:15:23",
+//            status = LogResults.SUCCESS
+//        ),
+//        ActivityLogs(
+//            logId = 2,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Signal Check",
+//            parameters = "RSSI: -45 dBm",
+//            timestamp = "2025-03-26 09:10:12",
+//            status = LogResults.SUCCESS
+//        ),
+//        ActivityLogs(
+//            logId = 3,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Device Activation",
+//            parameters = "Device: Thermostat, Action: Set 72°F",
+//            timestamp = "2025-03-26 09:05:47",
+//            status = LogResults.SUCCESS
+//        ),
+//        ActivityLogs(
+//            logId = 4,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Connection Attempt",
+//            parameters = "Target: Mobile App",
+//            timestamp = "2025-03-26 09:00:19",
+//            status = LogResults.FAILURE
+//        ),
+//        ActivityLogs(
+//            logId = 5,
+//            beaconId = "HSNN-1234-ABCD-2345",
+//            action = "Message Sent",
+//            parameters = "Recipient: Admin, Msg: Status Update",
+//            timestamp = "2025-03-26 08:55:33",
+//            status = LogResults.SUCCESS
+//        )
+//    )
     val beaconRssi = remember { mutableStateListOf<Float>() }
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
@@ -350,7 +350,7 @@ fun BeaconInfoScreen(
                                 }
 
                                 //TODO think about .takeLast(10)
-                                items(beaconLogs.take(10)) { log ->
+                                items(beaconLogs.value.take(10)) { log ->
                                     TableRow(log = log)
                                 }
                             }

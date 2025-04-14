@@ -335,7 +335,7 @@ fun AutomatedMessagingSetupScreen(
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Text(
-                            text = "TEST",
+                            text = "Test Message",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }

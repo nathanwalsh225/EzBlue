@@ -126,6 +126,10 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.1.0")
     testImplementation("org.robolectric:robolectric:4.10.3")
 
+    //custom time picker
+    implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+
 }
 
 kapt {
