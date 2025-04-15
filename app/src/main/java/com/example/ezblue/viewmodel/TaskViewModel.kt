@@ -1,10 +1,13 @@
 package com.example.ezblue.viewmodel
 
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.telephony.SmsManager
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -104,6 +107,18 @@ class TaskViewModel @Inject constructor(
             try {
                 Log.d("HomeScreen", "saving reminder log")
 
+                val builder = NotificationCompat.Builder(context, "reminder")
+                    .setSmallIcon(com.example.ezblue.R.drawable.ic_launcher_foreground)
+                    .setContentTitle("Reminder")
+                    .setContentText(beacon.configuration!!.parameters["reminderMsg"] as String)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setDefaults(NotificationCompat.DEFAULT_ALL) // for sound/vibration
+                    .setAutoCancel(true)
+
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(0, builder.build())
+
+
                 activityLogsDao.insertLogs(
                     ActivityLogs(
                         0,
@@ -163,6 +178,7 @@ class TaskViewModel @Inject constructor(
                 viewModelScope.launch(Dispatchers.IO) {
                     Log.d("HomeScreen", "Reminder Task")
                     if (performReminderTaskCheck(beacon, context)) {
+//                    if (true) {
                         Log.d("TaskViewModel", "Sending Reminder")
                         sendReminder(beacon, context, onSuccess, onError)
                     } else {
