@@ -13,6 +13,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,10 +22,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -53,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -280,29 +285,23 @@ fun BeaconInfoScreen(
             }
 
             item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
+
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "Signal Strength Over Time",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
                         if (beaconRssi.isNotEmpty()) {
                             ConnectivityGraph(beaconRssi)
                         } else {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                elevation = CardDefaults.cardElevation(8.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+                            ) {
                             Text(
                                 text = "No signal strength data available.",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -317,46 +316,82 @@ fun BeaconInfoScreen(
 
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Activity Log",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
                     AnimatedVisibility(visible = isExpanded) {
-                        Box(
+                        LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(220.dp)
-                                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)) // adding a round corner to the table for design improvement
+                                .heightIn(min = 150.dp, max = 300.dp)
+                                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                                .padding(4.dp)
                         ) {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                item {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.primary)
-                                            .padding(vertical = 2.dp).border(1.dp, Color.Red),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        TableHeaderCell("Time", fraction = 0.33f)
-                                        TableHeaderCell("Action", fraction = 0.33f)
-                                     //   TableHeaderCell("Params", fraction = 0.40f)
-                                        TableHeaderCell("Status", fraction = 0.33f)
-                                    }
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                        .padding(vertical = 6.dp, horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Time",
+                                        modifier = Modifier.weight(1f),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = "Action",
+                                        modifier = Modifier.weight(1f),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = "Status",
+                                        modifier = Modifier.weight(0.8f),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                 }
+                            }
 
-                                //TODO think about .takeLast(10)
-                                items(beaconLogs.value.take(10)) { log ->
-                                    TableRow(log = log)
+                            items(beaconLogs.value.take(10)) { log ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = log.timestamp.replace(" ", "\n"), //will split the date and the time so the time can be on a line below the date for visibility
+                                        modifier = Modifier.weight(1f),
+                                        fontSize = 12.sp,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = log.action,
+                                        modifier = Modifier.weight(1f),
+                                        fontSize = 12.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = log.status.name,
+                                        modifier = Modifier.weight(0.8f),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (log.status == LogResults.SUCCESS) Color(0xFF4CAF50) else Color(0xFFD32F2F)
+                                    )
                                 }
                             }
                         }
-//                        ActivityLogsTable(beaconLogs = beaconLogs)
                     }
+
+//
                     Button(
                         onClick = { isExpanded = !isExpanded },
                         modifier = Modifier
@@ -454,12 +489,14 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
             )
 
             Text(
-                text = "No signal strength data available",
+                text = "No RSSI data available",
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
+
+        return
     }
 
     // Converting the RSSI values to Points for the graph
@@ -467,24 +504,33 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
         Point(index.toFloat(), value)
     }
 
+    //limiting to 10 data points to show on the graph as it was getting too crowded otherwise
+    val maxPointsToShow = 10
+    val visiblePoints = if (pointsData.size > maxPointsToShow) {
+        pointsData.takeLast(maxPointsToShow)
+    } else {
+        pointsData
+    }
+
+
     // X-Axis configuration
     val xAxisData = AxisData.Builder()
         .axisStepSize(40.dp) //distance between the x-axis labels
-        .steps(pointsData.size - 1)
-        .labelData { i -> "${i}s" } //This is where the {x}s are labeled indicating seconds
-        .labelAndAxisLinePadding(15.dp)
+        .steps(visiblePoints.size)
+        //.labelData { i -> "${i}s" } //This is where the {x}s are labeled indicating seconds
+        .labelAndAxisLinePadding(8.dp)
         .build()
 
     // Y-Axis configuration
     val yAxisData = AxisData.Builder()
-        .steps(5) //distance between points
+        .steps(4) //distance between points
         .backgroundColor(MaterialTheme.colorScheme.background)
-        .labelAndAxisLinePadding(20.dp)
+        .labelAndAxisLinePadding(8.dp)
         .labelData { i ->
-            val yMin = pointsData.minOf { -100f } //minimum value of the y-axis
-            val yMax = pointsData.maxOf { -30f } //maximum value of the y-axis
-            val yScale = (yMax - yMin) / 5
-            ((i * yScale) + yMin).formatToSinglePrecision()
+            val yMin =  -100f  //minimum value of the y-axis
+            val yMax =  -30f  //maximum value of the y-axis
+            val yScale = (yMax - yMin) / 4
+            ((i * yScale) + yMin).toInt().toString()
         }
         .build()
 
@@ -493,12 +539,12 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
         linePlotData = LinePlotData(
             lines = listOf(
                 Line(
-                    dataPoints = pointsData,
+                    dataPoints = visiblePoints,
                     lineStyle = LineStyle(color = MaterialTheme.colorScheme.primary),
                     intersectionPoint = IntersectionPoint(),
-                    selectionHighlightPoint = SelectionHighlightPoint(),
+                    //selectionHighlightPoint = SelectionHighlightPoint(),
                     shadowUnderLine = ShadowUnderLine(),
-                    selectionHighlightPopUp = SelectionHighlightPopUp()
+                    //selectionHighlightPopUp = SelectionHighlightPopUp()
                 )
             )
         ),
@@ -509,223 +555,44 @@ fun ConnectivityGraph(rssiValues: List<Float>) {
     )
 
     // Render the LineChart
-    LineChart(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp),
-        lineChartData = lineChartData
-    )
-}
-
-
-//@Composable
-//fun ActivityLogsTable(beaconLogs: MutableState<List<ActivityLogs>>) {
-//
-//    //
-//    val logs =
-//        beaconLogs.value.takeLast(15) //Limiting the number of logs to 15 to not clutter the screen
-//
-//    //Dummy data for testing
-////    val logs = listOf(
-////        ActivityLogs(
-////            logId = 1,
-////            beaconId = "HSNN-1234-ABCD-2345",
-////            action = "Home Automation",
-////            parameters = "Device: Lights, Action: On",
-////            timestamp = "2024-12-30 14:35",
-////            status = LogResults.SUCCESS
-////        ),
-////        ActivityLogs(
-////            logId = 2,
-////            beaconId = "HSNN-1234-ABCD-2345",
-////            action = "Home Automation",
-////            parameters = "Device: Heater, Action: Off",
-////            timestamp = "2024-12-29 17:44",
-////            status = LogResults.SUCCESS
-////        ),
-////        ActivityLogs(
-////            logId = 3,
-////            beaconId = "HSNN-1234-ABCD-2345",
-////            action = "Home Automation",
-////            parameters = "Device: Lights, Action: On",
-////            timestamp = "2024-12-28 14:11",
-////            status = LogResults.SUCCESS
-////        ),
-////        ActivityLogs(
-////            logId = 4,
-////            beaconId = "HSNN-1234-ABCD-2345",
-////            action = "Home Automation",
-////            parameters = "Device: Lights, Action: On",
-////            timestamp = "2024-12-28 14:10",
-////            status = LogResults.FAILURE
-////        ),
-////        ActivityLogs(
-////            logId = 5,
-////            beaconId = "HSNN-1234-ABCD-2345",
-////            action = "Send Message",
-////            parameters = "Recipient: Dad",
-////            timestamp = "2024-12-28 14:10",
-////            status = LogResults.SUCCESS
-////        )
-////    )
-//
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(16.dp)
-//    ) {
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .background(MaterialTheme.colorScheme.primary)
-//                .border(1.dp, Color.White)
-//                .padding(vertical = 8.dp),
-//            horizontalArrangement = Arrangement.SpaceBetween
-//        ) {
-//            TableHeaderCell("Timestamp")
-//            TableHeaderCell("Action")
-//            TableHeaderCell("Parameters")
-//            TableHeaderCell("Status")
-//        }
-//
-//        logs.forEach { log ->
-//            //TableRow(log = log)
-//        }
-//    }
-//
-//}
-
-//@Composable
-//fun TableHeaderCell(text: String) {
-//    Text(
-//        text = text,
-//        fontSize = 12.sp,
-//        fontWeight = FontWeight.Bold,
-//        color = Color.White,
-//        textAlign = TextAlign.Center,
-//        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-//    )
-//}
-
-
-@Composable
-fun TableHeaderCell(
-    text: String,
-    fraction: Float = 1f
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth(fraction) // Allocate the fractional width
-            .padding(horizontal = 2.dp)
-            .border(1.dp, Color.White),
-        contentAlignment = Alignment.Center, // Center the content within the Box
+            .padding(8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.primary)
+            .padding(12.dp)
     ) {
         Text(
-            text = text,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center, // Center the text within its bounds
+            text = "Signal Strength Over Time",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            text = "Latest RSSI: ${rssiValues.lastOrNull()?.toInt()} dBm",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary) // Ensure the Text fills the Box
-        )
+                .height(180.dp)
+                .horizontalScroll(rememberScrollState())
+                .width((visiblePoints.size * 40).dp.coerceAtLeast(300.dp))
+        ) {
+            LineChart(
+                lineChartData = lineChartData,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
-@Composable
-fun TableRow(log: ActivityLogs) {
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TableCell(
-            text = log.timestamp,
-            fraction = 0.33f,
-            maxLines = 2
-        )
-        TableCell(
-            text = log.action,
-            fraction = 0.33f,
-            maxLines = 1
-        )
-//        TableCell(
-//            text = log.parameters,
-//            fraction = 0.40f,
-//            maxLines = 2
-//        )
-        TableCell(
-            text = log.status.name,
-            color = if (log.status == LogResults.SUCCESS) Color.Green else Color.Red,
-            fraction = 0.33f,
-            maxLines = 1
-        )
-    }
-//    Row(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .border(1.dp, Color.Black)
-//            .background(MaterialTheme.colorScheme.background)
-//            .padding(vertical = 8.dp),
-//        horizontalArrangement = Arrangement.SpaceBetween,
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Text(
-//            text = log.timestamp,
-//            fontSize = 12.sp,
-//            modifier = Modifier
-//                .weight(1f)
-//                .padding(8.dp)
-//        )
-//        Text(
-//            text = log.action,
-//            fontSize = 12.sp,
-//            modifier = Modifier
-//                .weight(1f)
-//                .padding(8.dp)
-//        )
-//        Text(
-//            text = log.parameters,
-//            fontSize = 12.sp,
-//            modifier = Modifier
-//                .weight(1f)
-//                .padding(8.dp)
-//        )
-//        Text(
-//            text = log.status.name,
-//            fontSize = 12.sp,
-//            modifier = Modifier
-//                .weight(1f)
-//                .padding(8.dp),
-//            color = if (log.status.name == LogResults.SUCCESS.name) Color.Green else Color.Red
-//        )
-//    }
-}
 
-@Composable
-fun TableCell(
-    text: String,
-    color: Color = MaterialTheme.colorScheme.secondary,
-    maxLines: Int = 1,
-    fraction: Float = 1f
-) {
-    Text(
-        text = text,
-        fontSize = 11.sp,
-        color = color,
-        modifier = Modifier
-            .fillMaxWidth(fraction)
-            .padding(horizontal = 2.dp, vertical = 0.dp),
-        maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis,
 
-    )
-}
 
 @Composable
 fun DeleteAlert(confirmDelete: () -> Unit, closeDialog: () -> Unit) {
@@ -740,7 +607,7 @@ fun DeleteAlert(confirmDelete: () -> Unit, closeDialog: () -> Unit) {
         },
         text = {
             Text(
-                text = "Are you sure you want to delete this beacon?",
+                text = "Are you sure you want to delete this beacon?\n\nNote: Deleting a beacon will remove all logs related to the beacon.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -750,7 +617,7 @@ fun DeleteAlert(confirmDelete: () -> Unit, closeDialog: () -> Unit) {
                 onClick = { confirmDelete() },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.secondary
+                    contentColor = Color.Red
                 )
             ) {
                 Text(

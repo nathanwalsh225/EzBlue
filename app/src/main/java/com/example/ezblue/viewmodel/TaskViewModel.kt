@@ -108,7 +108,7 @@ class TaskViewModel @Inject constructor(
                 Log.d("HomeScreen", "saving reminder log")
 
                 val builder = NotificationCompat.Builder(context, "reminder")
-                    .setSmallIcon(com.example.ezblue.R.drawable.ic_launcher_foreground)
+                    .setSmallIcon(com.example.ezblue.R.drawable.ezbluelogo_background)
                     .setContentTitle("Reminder")
                     .setContentText(beacon.configuration!!.parameters["reminderMsg"] as String)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)

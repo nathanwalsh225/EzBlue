@@ -287,9 +287,12 @@ fun BeaconCard(
             //TASK TITLE AND EXPAND/COLLAPSE BUTTON
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.Top
             ) {
-                Column {
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = beacon.beaconName,
                         style = MaterialTheme.typography.headlineSmall.copy(
@@ -297,75 +300,67 @@ fun BeaconCard(
                         )
                     )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (beacon.signalStrength >= -90) "${beacon.signalStrength} dBm" else "Beacon Unavailable",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.secondary
-                                )
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            LinearProgressIndicator(
-                                progress = {
-                                    (beacon.signalStrength + 100) / 60f // Normalize RSSI to a 0-1 scale
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp),
-                                color = if (beacon.signalStrength > -70) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
-                            )
-                        }
-
-                        Text(
-                            text = "Role: ${beacon.role}",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        )
-                    }
                 }
 
-                Box( //TODO why is this invisible?
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(Color.Red)
-                ) {
-                    IconButton(
-                        onClick = { isExpanded = !isExpanded },
-                        modifier = Modifier.padding(8.dp)
-                            .size(24.dp),
-//                    colors = IconButtonDefaults.iconButtonColors(
-//                        containerColor = MaterialTheme.colorScheme.secondary,
-//                        contentColor = MaterialTheme.colorScheme.secondary,
-//                        disabledContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
-//                        disabledContentColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.38f)
-//                    )
-                    ) {
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                            contentDescription = if (isExpanded) "Collapse" else "Expand",
-//                            modifier = Modifier
-//                                .rotate(if (isExpanded) 180f else 0f)
-//                                .animateContentSize(),
-                            tint = MaterialTheme.colorScheme.secondary.copy(alpha = 1f) // Force full visibility,
 
-                        )
-                    }
+
+                IconButton(
+                    onClick = { isExpanded = !isExpanded },
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(24.dp),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.secondary.copy(alpha = 1f)
+
+                    )
                 }
             }
 
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                color = MaterialTheme.colorScheme.outline
+            )
+
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (beacon.signalStrength >= -90) "${beacon.signalStrength} dBm" else "Beacon Unavailable",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    LinearProgressIndicator(
+                        progress = {
+                            (beacon.signalStrength + 100) / 60f // Normalize RSSI to a 0-1 scale
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp),
+                        color = if (beacon.signalStrength > -70) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
+                    )
+                }
+
+                Text(
+                    text = "Role: ${beacon.role}",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                )
+            }
 
             AnimatedVisibility(visible = isExpanded) {
                 Box(
@@ -402,7 +397,8 @@ fun BeaconCard(
                             Button(
                                 onClick = {
                                     Log.d("NavGraph", "Configure Beacon $beacon")
-                                    onConfigureBeacon(beacon) },
+                                    onConfigureBeacon(beacon)
+                                },
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
@@ -417,7 +413,8 @@ fun BeaconCard(
                             Button(
                                 onClick = {
                                     Log.d("NavGraph", "Murder")
-                                    onNavigateToBeaconInfoScreen(beacon) },
+                                    onNavigateToBeaconInfoScreen(beacon)
+                                },
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,

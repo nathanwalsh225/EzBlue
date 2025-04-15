@@ -78,34 +78,13 @@ class MainActivity : ComponentActivity() {
 
             // Launch permission request
             permissionState.launchMultiplePermissionRequest()
-
-
-            //TODO either use this or scrap it
-
-            // Continuously monitor until the user completes permission interaction
-            //https://proandroiddev.com/mastering-side-effects-in-jetpack-compose-b7ee46162c01
-            //https://medium.com/@tangkegaga/snapshotflow-3895096e6fd9
-            //mix of the documentation and chatGPT helped me get this going to create a loop that will keep checking the permissions
-            //until the user has either granted or denied them just for a more dynamic experience
-//            snapshotFlow { permissionState.allPermissionsGranted }
-//                .collect { allGranted ->
-//                    if (allGranted) {
-//                        requestingPermissions.value = false // Permissions granted
-//                    } else {
-//                        val shouldShowRationale = permissionState.permissions.any { permission ->
-//                            permission.status.shouldShowRationale
-//                        }
-//                        if (!shouldShowRationale) {
-//                            requestingPermissions.value = false // Permissions denied
-//                        }
-//                    }
-//                }
         }
 
         when {
             permissionState.allPermissionsGranted -> {
                 content() // permissions granted so the application can continue
             }
+
             else -> {
                 FallbackUI() // Permissions were denied so inform the user they need to approve them
             }

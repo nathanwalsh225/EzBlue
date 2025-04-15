@@ -31,7 +31,6 @@ class BeaconWorker(
     //var connectedBeacons by userViewModel.connectedBeacons
 
 
-
     @SuppressLint("MissingPermission")
     override suspend fun doWork(): Result = suspendCoroutine { cont ->
         val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
