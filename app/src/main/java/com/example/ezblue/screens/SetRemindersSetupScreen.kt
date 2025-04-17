@@ -345,8 +345,15 @@ fun SetRemindersSetupScreen(
 
                             OutlinedButton(
                                 onClick = {
-                                    //TODO
-                                    //SETUP SEEMS TO BE GOOD, JUST NEED TO ADD CONFIRMATIONS SCREEN THEN SAVE TASK
+                                    if (reminderMsg.value.isBlank() ||
+                                        reminderInterval.intValue == 0 ||
+                                        customStartTime.value == null ||
+                                        customEndTime.value == null
+                                    ) {
+                                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_LONG).show()
+                                        return@OutlinedButton
+                                    }
+
                                     onNextClicked.value = !onNextClicked.value
                                 },
                                 modifier = Modifier
@@ -374,11 +381,27 @@ fun SetRemindersSetupScreen(
                     onNextClicked.value = !onNextClicked.value
                 },
                 onSaveClicked = {
-                    //TODO
                     //Save the task to the database
+
+
                     try {
                         if (update.value) {
-
+                            beaconViewModel.updateBeacon(
+                                beacon = beacon,
+                                parameters = mapOf(
+                                    "reminderMsg" to reminderMsg.value,
+                                    "msgInterval" to reminderInterval.intValue.toString(),
+                                    "startTime" to customStartTime.value.toString(),
+                                    "endTime" to customEndTime.value.toString()
+                                ),
+                                onSuccess = {
+                                    Log.d("SetRemindersSetupScreen", "Reminders Set")
+                                    onSetRemindersComplete()
+                                },
+                                onFailure = { error ->
+                                    Log.d("SetRemindersSetupScreen", "Error Setting Reminders: $error")
+                                }
+                            )
                         } else {
                             beaconViewModel.connectToBeacon(
                                 beacon = beacon,
@@ -390,10 +413,11 @@ fun SetRemindersSetupScreen(
                                     "endTime" to customEndTime.value.toString()
                                 ),
                                 onSuccess = {
+                                    Log.d("SetRemindersSetupScreen", "Reminders Set")
                                     onSetRemindersComplete()
                                 },
                                 onFailure = { error ->
-
+                                    Log.d("SetRemindersSetupScreen", "Error Setting Reminders: $error")
                                 }
                             )
                         }

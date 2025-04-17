@@ -223,7 +223,7 @@ fun SideBarContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = if (isScanningEnabled) "Disable Beacon Scanning" else "Enable Beacon Scanning",
+                text = if (isScanningEnabled) "Disable Background Scanning" else "Enable Background Scanning",
                 modifier = Modifier.weight(1f)
             )
             Switch(

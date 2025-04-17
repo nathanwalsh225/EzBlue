@@ -9,8 +9,16 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.ezblue.R
+import com.example.ezblue.config.BeaconTaskHandler
+import com.example.ezblue.model.Beacon
+import com.example.ezblue.roomdb.DatabaseProvider
+import com.example.ezblue.viewmodel.TaskViewModel
 import com.polidea.rxandroidble3.RxBleClient
 import com.polidea.rxandroidble3.scan.ScanSettings
 import io.reactivex.rxjava3.disposables.Disposable
@@ -20,17 +28,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class BeaconScanService : Service() {
 
+    private lateinit var handler: BeaconTaskHandler
+    //var connectedBeacons by userViewModel.connectedBeacons
     private lateinit var rxBleClient: RxBleClient
     private var scanDisposable: Disposable? = null
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
     private var isScanning = true
 
+
     override fun onCreate() {
         super.onCreate()
-        rxBleClient = RxBleClient.create(this)
+        rxBleClient = RxBleClient.create(applicationContext)
+        handler = BeaconTaskHandler(applicationContext)
         startForeground(1, createNotification())
         startScanLoop()
     }
@@ -43,15 +56,13 @@ class BeaconScanService : Service() {
 
     private fun createNotification(): Notification {
         val channelId = "beacon_scan_channel"
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Beacon Scan",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            channelId,
+            "Beacon Scan",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
 
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("EzBlue Beacon Scanning")
@@ -64,6 +75,12 @@ class BeaconScanService : Service() {
         Log.d("BeaconWorker", "Starting scan loop...")
 
         serviceScope.launch {
+
+            val database = DatabaseProvider.getRoomDatabase(applicationContext)
+            val connectedBeacons = withContext(Dispatchers.IO) {
+                database.beaconDao().getAllBeacons()
+            }
+
             while (isScanning) {
                 Log.d("BeaconScanService", "Starting scan...")
                 scanDisposable = rxBleClient.scanBleDevices(
@@ -78,7 +95,31 @@ class BeaconScanService : Service() {
                             val id = result.bleDevice.macAddress
                             val rssi = result.rssi
                             Log.d("BeaconScanService", "Beacon: $id, RSSI: $rssi")
-                            // triggerAction(id)
+
+                            connectedBeacons.forEach { beacon ->
+                                if (beacon.beaconId == id) {
+                                    if (beacon.configuration != null) {
+                                        serviceScope.launch {
+                                            handler.handleBeaconTask(
+                                                beacon = beacon,
+                                                context = applicationContext,
+                                                onSuccess = {
+                                                    Log.d("ScanService", "Task succeeded")
+                                                },
+                                                onError = {
+                                                    Log.d("ScanService", "Task failed or not needed")
+                                                }
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Log.d("HomeScreen", "Skipping scan for $id")
+                                }
+
+
+                            }
+
+
                         },
                         { error ->
                             Log.e("BeaconScanService", "Scan error: ${error.message}")

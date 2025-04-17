@@ -47,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.ezblue.config.BeaconTaskHandler
 import com.example.ezblue.model.Beacon
 import com.example.ezblue.model.BeaconStatus
 import com.example.ezblue.navigation.MainScreenWithSideBar
@@ -66,6 +68,7 @@ import com.example.ezblue.viewmodel.TaskViewModel
 import com.example.ezblue.viewmodel.UserViewModel
 import kotlinx.coroutines.Delay
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -78,9 +81,11 @@ fun HomeScreen(
     onConfigureBeacon: (Beacon) -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var connectedBeacons by userViewModel.connectedBeacons //Beacons connected to the user are being gathered in the userViewModel
     val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
+    val handler = BeaconTaskHandler(context)
     val filterList = mutableListOf<ScanFilter>()
     val scanRecords = mutableListOf<Int>()
 
@@ -129,16 +134,28 @@ fun HomeScreen(
                             lastExecutionTimeMap[device.address] = currentTime
 
                             if (beacon.configuration != null) { //Prevent null crashes, dont do any task until configurations have been loaded
-
-                                taskViewModel.handleBeaconTask(
-                                    beacon = beacon,
-                                    context = context,
-                                    onSuccess = {
-                                        //TODO maybe toss in a confirmation message like a toast
-                                    },
-                                    onError = {
-
-                                    }) //perform the task for the beacon
+                                coroutineScope.launch {
+                                    handler.handleBeaconTask(
+                                        beacon = beacon,
+                                        context = context,
+                                        onSuccess = {
+                                            Log.d("HomeScreen", "Task succeeded")
+                                            //TODO maybe toss in a confirmation message like a toast
+                                        },
+                                        onError = {
+                                            Log.d("HomeScreen", "Task failed or not needed")
+                                        }
+                                    ) //perform the task for the beacon
+                                }
+//                                taskViewModel.handleBeaconTask(
+//                                    beacon = beacon,
+//                                    context = context,
+//                                    onSuccess = {
+//                                        //TODO maybe toss in a confirmation message like a toast
+//                                    },
+//                                    onError = {
+//
+//                                    }) //perform the task for the beacon
                             }
                         } else {
                             Log.d("HomeScreen", "Skipping scan for $device.address")
@@ -165,6 +182,12 @@ fun HomeScreen(
         //to do it here in the first place, it was just one of those days
         //fetching the users beacons and configurations Mostly code taken from old project StudyPath
         userViewModel.fetchBeaconsAndConfigurations()
+
+        try {
+            userViewModel.syncBeaconsFromFirebase(context) //syncing the user beacons to Room DB for background tasks
+        } catch (e: Exception) {
+            Log.d("HomeScreen", "Error syncing beacons from firebase: ${e.message}")
+        }
 
         while (true) {
             //start the scan in a balanced state to check for beacons
@@ -231,7 +254,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { /* Navigate to beacon scan */ },
+                    onClick = { navController.navigate("connections") },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Scan for Beacons", color = MaterialTheme.colorScheme.secondary)

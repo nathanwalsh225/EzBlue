@@ -182,10 +182,11 @@ class BeaconViewModel @Inject constructor(
             parameters = parameters,
             visibility = if (beacon.role == "Open Links") Visibility.PUBLIC.name else Visibility.PRIVATE.name,
             onSuccess = {
+                Log.d("BigTest", "Configuration Updated")
                 onSuccess()
-                Log.d("TestingStuff", "Configuration Updated")
             },
             onError = { e ->
+                Log.e("BigTest", "Failed to update configuration - Error: $e")
                 onFailure("Failed to update configuration - Error: $e")
             }
         )

@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
@@ -28,10 +31,15 @@ fun NavGraph(
 ) {
     val context = LocalContext.current
     val database = DatabaseProvider.getRoomDatabase(context)
+    val user = FirebaseAuth.getInstance().currentUser
+    val startDestination by remember {
+        mutableStateOf(if (user != null) "home" else "login")
+    }
+
 
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = startDestination,
     ) {
 
         composable("login") {
@@ -65,6 +73,9 @@ fun NavGraph(
         }
 
         composable("home") {
+
+            Log.d("SetRemindersSetupScreen", "Made it home")
+
             HomeScreen(
                 navController = navController,
                 onLogoutClick = {
