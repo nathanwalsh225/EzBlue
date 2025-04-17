@@ -86,6 +86,8 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.material)
+    implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.espresso.core)
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
@@ -130,6 +132,12 @@ dependencies {
     implementation("io.github.vanpra.compose-material-dialogs:core:0.9.0")
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 
+    //background scanning BLE library
+    implementation("com.polidea.rxandroidble3:rxandroidble:1.19.0")
+
+
+    //DataStore for saved preferences
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 }
 
 kapt {

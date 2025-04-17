@@ -1,8 +1,12 @@
 package com.example.ezblue.navigation
 
+import android.content.Context
+import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,19 +30,28 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.ezblue.data.ScanPreferences
+import com.example.ezblue.service.BeaconScanService
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,6 +67,8 @@ fun MainScreenWithSideBar(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+
 
     ModalNavigationDrawer(
         drawerContent = {
@@ -66,7 +81,8 @@ fun MainScreenWithSideBar(
                 },
                 onLogoutClick = onLogoutClick,
                 onAccountSettingsClick = onAccountSettingsClick,
-                onSettingsClick = onSettingsClick
+                onSettingsClick = onSettingsClick,
+                context = context
             )
         },
         drawerState = drawerState
@@ -117,8 +133,13 @@ fun SideBarContent(
     onSettingsClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
+    context: Context,
     onCloseDrawer: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    val isScanningEnabledFlow = remember { ScanPreferences.isScanningEnabled(context) }
+    val isScanningEnabled by isScanningEnabledFlow.collectAsState(initial = false)
+
     Column(
         modifier = Modifier
             .fillMaxWidth(0.75f)
@@ -181,6 +202,47 @@ fun SideBarContent(
             )
             Text("ACCOUNT")
         }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .clickable {
+                    val newValue = !isScanningEnabled
+                    scope.launch {
+                        ScanPreferences.setScanningEnabled(context, newValue)
+                    }
+
+                    val intent = Intent(context, BeaconScanService::class.java)
+                    if (newValue) {
+                        context.startService(intent)
+                    } else {
+                        context.stopService(intent)
+                    }
+                },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (isScanningEnabled) "Disable Beacon Scanning" else "Enable Beacon Scanning",
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = isScanningEnabled,
+                onCheckedChange = { newValue ->
+                    scope.launch {
+                        ScanPreferences.setScanningEnabled(context, newValue)
+                    }
+
+                    val intent = Intent(context, BeaconScanService::class.java)
+                    if (newValue) {
+                        context.startService(intent)
+                    } else {
+                        context.stopService(intent)
+                    }
+                }
+            )
+        }
+
 
         Spacer(modifier = Modifier.weight(1f)) //Push the logout button to the bottom
 

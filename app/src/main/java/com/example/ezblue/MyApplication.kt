@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
 import android.os.Build
 import com.google.firebase.FirebaseApp
 import dagger.hilt.android.HiltAndroidApp
@@ -30,7 +29,6 @@ class MyApplication : Application() {
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
         }
-
 
     }
 }

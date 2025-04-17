@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             EzBlueTheme {
                 val navController = rememberNavController()
@@ -64,9 +65,14 @@ class MainActivity : ComponentActivity() {
                     add(Manifest.permission.BLUETOOTH_ADMIN) // For older Android versions
                     add(Manifest.permission.BLUETOOTH)
                 }
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     add(Manifest.permission.POST_NOTIFICATIONS) //if the current SDK version is greater than TIRAMISU (33) then we need to ask for this permission
                 }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                }
+
             }
         )
 
